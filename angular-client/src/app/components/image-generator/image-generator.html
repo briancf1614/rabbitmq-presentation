@@ -9,7 +9,8 @@
     
     <textarea 
       id="promptInput"
-      [(ngModel)]="promptText" 
+      [ngModel]="promptText()" 
+      (ngModelChange)="promptText.set($event)"
       rows="3" 
       placeholder="Es: Un drago fatto di cristallo..."
       [disabled]="isLoading()">
@@ -23,7 +24,8 @@
       <input 
         id="qtyInput"
         type="number" 
-        [(ngModel)]="quantity" 
+        [ngModel]="quantity()"
+        (ngModelChange)="quantity.set($event)"
         min="1" 
         max="10"
         placeholder="1"
@@ -35,7 +37,8 @@
         <input 
           id="effectInput"
           type="checkbox" 
-          [(ngModel)]="addExtraEffect"
+          [ngModel]="addExtraEffect()"
+          (ngModelChange)="addExtraEffect.set($event)"
           [disabled]="isLoading()">
         <span>Aggiungi Effetti Extra</span>
       </label>
@@ -62,4 +65,12 @@
       {{ responseMessage() }}
     </div>
   }
+
+  @if (generatedImageUrl()) {
+    <div class="result-container">
+      <h3>Risultato:</h3>
+      <img [src]="generatedImageUrl()" alt="Immagine generata" class="generated-img">
+    </div>
+  }
+
 </section>
