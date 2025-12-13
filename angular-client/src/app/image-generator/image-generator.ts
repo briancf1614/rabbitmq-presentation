@@ -3,9 +3,11 @@ import { ImageRequest } from '../models/image-request';
 import { ImageGeneratorService } from '../services/image-generator-service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-image-generator',
+  standalone: true,
   imports: [FormsModule,CommonModule],
   templateUrl: './image-generator.html',
   styleUrl: './image-generator.scss',
