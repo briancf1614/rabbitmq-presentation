@@ -25,74 +25,45 @@ private imageService = inject(ImageGeneratorService);
   hasError = signal(false);
 
   generateImage() {
-    if (!this.promptText() || this.isLoading()) return;
+  this.isLoading.set(true);
+  this.generatedImageUrl.set(null); // Pulisce vecchia immagine
 
-    this.isLoading.set(true);
-    this.responseMessage.set(null);
-    this.generatedImageUrl.set(null);
-    this.hasError.set(false);
-
-    // Prepariamo l'oggetto come da tuo modello
-    const requestData: ImageRequest = {
-      // Nota: RequestId lo mettiamo null o opzionale, lo genera l'API (come deciso prima)
-      requestId: undefined, 
-      prompt: this.promptText(),
-      quantity: this.quantity(),
-      addExtraEffect: this.addExtraEffect()
-    };
-
-    // USIAMO IL TUO SERVICE
-    this.imageService.requestGeneration(requestData).subscribe({
-      next: (res) => {
-        // L'API risponde con { message: "...", requestId: "GUID" }
-        // Se il tuo modello ApiResponse ha 'requestId', usalo qui:
-        const apiRequestId = res.requestId; 
-        
-        this.responseMessage.set(`Inviato! ID: ${apiRequestId}. Attendo worker...`);
-
-        // Avviamo il polling
-        this.waitForImage(apiRequestId);
-      },
-      error: (err) => {
-        console.error(err);
-        this.hasError.set(true);
-        this.responseMessage.set('Errore: Impossibile contattare il server.');
-        this.isLoading.set(false);
-      }
-    });
-  }
-
-  waitForImage(id: string | undefined) {
-    if (!id) return;
-
-    // Recuperiamo l'URL base dal service (es. https://api.briancico.com/images)
-    const baseUrl = this.imageService.getImageBaseUrl();
-    const expectedUrl = `${baseUrl}/${id}_0.jpg`;
-
-    let attempts = 0;
-    const maxAttempts = 30; 
-
-    const interval = setInterval(() => {
-      attempts++;
+  // 1. Inviamo richiesta
+  const requestData: ImageRequest = {
+    // requestId: NON lo mettiamo, perché ora è opzionale (?)
+    prompt: this.promptText(),
+    quantity: this.quantity(),
+    addExtraEffect: this.addExtraEffect() // <--- AGGIUNGI QUESTO (anche se è false)
+  };
+  
+  this.imageService.requestGeneration(requestData).subscribe({
+    next: (res) => {
+      // 2. L'API ci dice: "Ok, il tuo ID è XYZ"
+      this.responseMessage.set('In lavorazione...');
       
-      // HEAD request per vedere se il file esiste
-      fetch(expectedUrl, { method: 'HEAD' })
-        .then(res => {
-          if (res.ok) {
-            clearInterval(interval);
-            this.generatedImageUrl.set(expectedUrl);
-            this.isLoading.set(false);
-            this.responseMessage.set('Immagine pronta!');
-          }
-        })
-        .catch(() => {});
+      // 3. Iniziamo ad aspettare l'immagine XYZ
+      this.waitForImage(res.requestId); 
+    },
+    error: () => { /* gestisci errore */ }
+  });
+}
 
-      if (attempts >= maxAttempts) {
-        clearInterval(interval);
-        this.isLoading.set(false);
-        this.hasError.set(true);
-        this.responseMessage.set('Timeout: Il worker è troppo lento o offline.');
-      }
-    }, 2000); 
-  }
+  waitForImage(id: string) {
+  // L'URL sarà questo
+  const url = `${this.imageService.getImageBaseUrl()}/${id}_0.jpg`;
+  
+  // Polling semplice
+  const interval = setInterval(() => {
+    fetch(url, { method: 'HEAD' }) // Chiede solo "esisti?"
+      .then(res => {
+        if (res.ok) {
+          clearInterval(interval); // Ferma il timer
+          this.generatedImageUrl.set(url); // Mostra l'immagine
+          this.isLoading.set(false);
+          this.responseMessage.set('Fatto!');
+        }
+      })
+      .catch(() => { /* Ancora nulla, aspettiamo il prossimo giro */ });
+  }, 2000);
+}
 }

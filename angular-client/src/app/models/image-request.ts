@@ -1,15 +1,14 @@
 export interface ImageRequest {
-  requestId: string | undefined; // <--- NUOVO
+  requestId?: string;
   prompt: string;
   quantity: number;
   addExtraEffect: boolean;
 }
 
 export interface ApiResponse {
-  requestId: string; // <--- MODIFICATO
   message: string;
-  details: string;
-  originalRequest: ImageRequest;
+  requestId: string;
+  details?: string;
 }
 export interface CardData {
   id: number;

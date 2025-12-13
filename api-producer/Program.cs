@@ -16,23 +16,16 @@ if (!Directory.Exists(imagesPath))
     Directory.CreateDirectory(imagesPath);
 }
 
-// Creiamo un provider per non ripetere il codice
-var fileProvider = new PhysicalFileProvider(imagesPath);
-var requestPath = "/images";
+// === CONFIGURAZIONE IMMAGINI ===
+string imagesPath = Path.Combine(Directory.GetCurrentDirectory(), "generated-images");
+if (!Directory.Exists(imagesPath)) Directory.CreateDirectory(imagesPath);
 
-// 2. ABILITA LA VISIONE DEI FILE (Se conosci il nome esatto)
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = fileProvider,
-    RequestPath = requestPath
-});
-
-// 3. ABILITA L'ELENCO DEI FILE (Quello che vuoi tu!)
-// Ora se vai su /images vedrai la lista HTML dei file
-app.UseDirectoryBrowser(new DirectoryBrowserOptions
-{
-    FileProvider = fileProvider,
-    RequestPath = requestPath
+    FileProvider = new PhysicalFileProvider(imagesPath),
+    RequestPath = "/images"
+    // Risultato: http://localhost:8080/images/abc-123_0.jpg funziona.
+    // http://localhost:8080/images/ dà 404 (giusto così).
 });
 
 Console.WriteLine($"[INFO] Servendo immagini da: {imagesPath}");
