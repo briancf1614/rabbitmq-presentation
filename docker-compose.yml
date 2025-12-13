@@ -1,7 +1,7 @@
 services:
   # 🐰 1. RABBITMQ (Il Message Broker)
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management
     container_name: rabbitmq
     restart: always
     ports:
@@ -18,8 +18,9 @@ services:
     # Cloudflare parlerà con questo container sulla porta 8080 interna
     # Mappiamo la 3000 solo per debug locale se serve
     ports:
-      - "3000:8080"
+      - "8080:8080"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Production
       - RABBITMQ_HOST=rabbitmq
     depends_on:
       - rabbitmq
@@ -33,11 +34,9 @@ services:
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
+      - GOOGLE_API_KEY=${GOOGLE_KEY}
     volumes:
-      # DOVE LEGGE: La cartella con l'immagine "finta" (Nano Banana)
-      - ./shared-assets:/app/shared-assets
-      # DOVE SCRIVE: La cartella dove salva i risultati generati
-      - ./generated-images:/app/results
+      - image_storage:/app/generated-images:rw
     depends_on:
       - rabbitmq
     networks:
@@ -52,11 +51,8 @@ services:
     depends_on:
       - api-producer
     volumes:
-      # IL TRUCCO DI MAGIA:
-      # Mappiamo la cartella dove il Worker scrive le immagini (generated-images)
-      # DENTRO la cartella degli asset di Nginx.
-      # Così Angular può mostrare l'immagine appena creata.
-      - ./generated-images:/usr/share/nginx/html/assets/generated
+      # Mappiamo lo stesso volume dentro gli asset di Nginx
+      - image_storage:/usr/share/nginx/html/assets/generated:ro
     networks:
       - rabbit-net
 
@@ -66,10 +62,13 @@ services:
     container_name: cloudflared-tunnel
     restart: always
     # 👇 INCOLLA QUI SOTTO IL TUO TOKEN DI CLOUDFLARE 👇
-    command: tunnel run --token eyJhIjoiNjU3ZDlkMjUyNGRlZWJjYzZmMmQwNzFmNTI0Zjc2NGUiLCJ0IjoiNmM4OGEzNTctOWNjZS00YzUwLTgxNTktM2IyYjEyOGI4YWM4IiwicyI6Ik9EWTNaamhpWkRndFpUbGhOaTAwWmpZNUxXSmlOelV0WVRWbE9HUTNPVEEzTURReCJ9
+    command: tunnel run --token ${CLOUDFLARE_TOKEN}
     networks:
       - rabbit-net
 
 networks:
   rabbit-net:
     driver: bridge
+
+volumes:
+  image_storage:

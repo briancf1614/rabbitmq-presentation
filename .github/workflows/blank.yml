@@ -21,6 +21,9 @@ jobs:
       run: |
         echo "Inizio Deploy sul Ryzen..."
         
+        export CLOUDFLARE_TOKEN="${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+        export GOOGLE_KEY="${{ secrets.GOOGLE_API_KEY_SECRET }}"
+        
         # Creiamo le cartelle necessarie (se non ci sono) server per non farle creare a docker, che le crea pero con permessi root 
         mkdir -p shared-assets
         mkdir -p generated-images
