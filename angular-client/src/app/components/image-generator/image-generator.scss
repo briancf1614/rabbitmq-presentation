@@ -1,0 +1,79 @@
+.generator-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  textarea, input[type="number"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    
+    &:focus { outline: 2px solid #6366f1; border-color: transparent; }
+  }
+}
+
+.options-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center; // Allinea verticalmente checkbox e input
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-top: 1.5rem; // Per allinearlo col campo numero
+  
+  label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: normal;
+  }
+  
+  input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    cursor: pointer;
+  }
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 1rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  
+  &:disabled { background-color: #a5a6f6; cursor: not-allowed; }
+  &:hover:not(:disabled) { background-color: #4338ca; }
+}
+
+.alert {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  text-align: center;
+  
+  &.success { background: #d1fae5; color: #065f46; }
+  &.error { background: #fee2e2; color: #991b1b; }
+}

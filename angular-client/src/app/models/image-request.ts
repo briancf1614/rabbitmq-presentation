@@ -9,3 +9,10 @@ export interface ApiResponse {
   details: string;
   originalRequest: ImageRequest;
 }
+export interface CardData {
+  id: number;
+  title: string;
+  description: string;
+  status: 'active' | 'inactive' | 'pending';
+  imageUrl?: string; // opzionale
+}

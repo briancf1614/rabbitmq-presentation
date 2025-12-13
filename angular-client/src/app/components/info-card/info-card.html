@@ -1,0 +1,23 @@
+<article class="card" [class]="data().status">
+  
+  @if (data().imageUrl; as url) {
+    <figure class="card-image">
+      <img [src]="url" alt="data().title">
+    </figure>
+  }
+
+  <div class="card-content">
+    <header>
+      <h3>{{ data().title }}</h3>
+      <span class="status-badge">{{ data().status }}</span>
+    </header>
+    
+    <p>{{ data().description }}</p>
+
+    <div class="actions">
+      <ng-content />
+      
+      <button (click)="onAction()">Azione Rapida</button>
+    </div>
+  </div>
+</article>

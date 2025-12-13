@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { ImageGenerator } from './image-generator/image-generator';
+import { ImageGenerator } from './components/image-generator/image-generator';
 
 @Component({
   selector: 'app-root',

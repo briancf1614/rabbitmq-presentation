@@ -1,0 +1,17 @@
+<section class="grid-layout">
+  
+  @for (item of items(); track item.id) {
+    
+    <app-info-card 
+      [data]="item" 
+      (actionClicked)="handleLog($event)">
+      
+      <button class="btn-primary">Dettagli</button>
+
+    </app-info-card>
+
+  } @empty {
+    <p>Nessun elemento da mostrare.</p>
+  }
+
+</section>

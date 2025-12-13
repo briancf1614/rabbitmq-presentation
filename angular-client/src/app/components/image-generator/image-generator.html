@@ -1,0 +1,65 @@
+<section class="generator-card">
+  <header>
+    <h2>AI Image Creator</h2>
+    <p>Configura la tua richiesta</p>
+  </header>
+
+  <div class="form-group">
+    <label for="promptInput">Descrizione</label>
+    
+    <textarea 
+      id="promptInput"
+      [(ngModel)]="promptText" 
+      rows="3" 
+      placeholder="Es: Un drago fatto di cristallo..."
+      [disabled]="isLoading()">
+    </textarea>
+  </div>
+
+  <div class="options-row">
+    
+    <div class="form-group half-width">
+      <label for="qtyInput">Quantità</label>
+      <input 
+        id="qtyInput"
+        type="number" 
+        [(ngModel)]="quantity" 
+        min="1" 
+        max="10"
+        placeholder="1"
+        [disabled]="isLoading()">
+    </div>
+
+    <div class="form-group checkbox-group">
+      <label for="effectInput">
+        <input 
+          id="effectInput"
+          type="checkbox" 
+          [(ngModel)]="addExtraEffect"
+          [disabled]="isLoading()">
+        <span>Aggiungi Effetti Extra</span>
+      </label>
+    </div>
+
+  </div>
+
+  <div class="actions">
+    <button 
+      class="btn-primary" 
+      (click)="generateImage()"
+      [disabled]="!promptText() || isLoading()">
+      
+      @if (isLoading()) {
+        <span>Processando...</span>
+      } @else {
+        <span>Genera Immagini</span>
+      }
+    </button>
+  </div>
+
+  @if (responseMessage()) {
+    <div class="alert" [class.error]="hasError()" [class.success]="!hasError()">
+      {{ responseMessage() }}
+    </div>
+  }
+</section>

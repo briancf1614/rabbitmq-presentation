@@ -1,0 +1,34 @@
+:host {
+  display: block; // I custom element sono inline di default
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
+
+  // Modern CSS Nesting (ora nativo nei browser, ma SCSS lo supporta da sempre)
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  &.active { border-left: 4px solid #10b981; }
+  &.pending { border-left: 4px solid #f59e0b; }
+  &.inactive { opacity: 0.6; filter: grayscale(1); }
+}
+
+.card-content { padding: 1.5rem; }
+
+// Utility classes locali
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: #f3f4f6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

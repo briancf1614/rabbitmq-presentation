@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ApiResponse, ImageRequest } from '../models/image-request';
 import { Observable } from 'rxjs';
 
@@ -7,15 +7,9 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class ImageGeneratorService {
-    private apiUrl = '/api/ImageRequest/generate';
+  private apiUrl = '/api/ImageRequest/generate';
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) { }
-
-  /**
-   * Invia la richiesta di generazione immagine alla API .NET
-   * @param request L'oggetto che contiene il prompt e le opzioni.
-   * @returns Un Observable con la risposta della API (che è subito un "OK").
-   */
   requestGeneration(request: ImageRequest): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(this.apiUrl, request);
   }
