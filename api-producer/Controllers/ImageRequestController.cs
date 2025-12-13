@@ -1,42 +1,81 @@
 using Microsoft.AspNetCore.Mvc;
 using RabbitMQ.Client;
 using System.Text;
+using System.Text.Json;
 
 namespace api_producer.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class ImageRequestController : ControllerBase
     {
+        // Endpoint: POST api/ImageRequest/generate
         [HttpPost("generate")]
-        public IActionResult RequestImageGeneration([FromBody] string prompt)
+        public async Task<IActionResult> RequestImageGeneration([FromBody] ImageGenerationRequest request)
         {
-            var factory = new ConnectionFactory { HostName = "rabbitmq" };
-            using var connection = factory.CreateConnection();
-            using var channel = connection.CreateModel();
+            // 1. Validazione Base
+            if (string.IsNullOrWhiteSpace(request.Prompt))
+            {
+                return BadRequest("Il prompt è obbligatorio! Scrivi qualcosa.");
+            }
 
-            // 2. Nombres (DEBEN SER IGUALES EN EL CONSUMER)
-            const string ExchangeName = "image_requests_exchange";
-            const string QueueName = "image_requests_queue";
-            const string RoutingKey = "image_request";
+            // Impostiamo un default se la quantità non viene mandata o è zero
+            if (request.Quantity <= 0) request.Quantity = 1;
 
-            // 3. Declaración: Crea el Exchange y la Cola si no existen
-            channel.ExchangeDeclare(exchange: ExchangeName, type: ExchangeType.Direct);
-            channel.QueueDeclare(queue: QueueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
-            channel.QueueBind(queue: QueueName, exchange: ExchangeName, routingKey: RoutingKey);
+            try
+            {
+                // === LOGICA RABBITMQ (Versione Async) ===
 
-            // 4. Publicación
-            var body = Encoding.UTF8.GetBytes(prompt);
+                // 2. Connessione al container "rabbitmq" (nome del servizio nel docker-compose)
+                var factory = new ConnectionFactory { HostName = "rabbitmq" };
 
-            channel.BasicPublish(exchange: ExchangeName,
-                                 routingKey: RoutingKey,
-                                 basicProperties: null,
-                                 body: body);
+                // 3. Creiamo connessione e canale
+                // "await using" assicura che vengano chiusi e puliti alla fine della richiesta
+                await using var connection = await factory.CreateConnectionAsync();
+                await using var channel = await connection.CreateChannelAsync();
 
-            // === FIN DEL ENVÍO ===
+                // 4. Definiamo la Topologia (Idempotente: se esiste già, non fa nulla)
+                // Usiamo costanti (stringhe) che devono essere UGUALI nel Worker
+                const string exchangeName = "image_requests_exchange";
+                const string queueName = "image_requests_queue";
+                const string routingKey = "image_request";
 
-            // Devuelve una respuesta inmediata al frontend (Angular)
-            return Ok(new { message = $"Solicitud recibida y encolada para: '{prompt}'." });
+                await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct);
+                await channel.QueueDeclareAsync(queue: queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
+                await channel.QueueBindAsync(queueName, exchangeName, routingKey);
+
+                // 5. Prepariamo il Messaggio (Payload)
+                // Serializziamo tutto l'oggetto (Prompt + Quantità + Opzioni) in JSON
+                string jsonPayload = JsonSerializer.Serialize(request);
+                var body = Encoding.UTF8.GetBytes(jsonPayload);
+
+                // 6. Pubblichiamo il messaggio nell'Exchange
+                await channel.BasicPublishAsync(exchange: exchangeName, routingKey: routingKey, body: body);
+
+                // =========================================
+
+                Console.WriteLine($"[API] Messaggio inviato: {request.Prompt} (x{request.Quantity})");
+
+                // Rispondiamo subito all'utente (Angular) senza farlo aspettare
+                return Ok(new
+                {
+                    message = "Richiesta presa in carico!",
+                    details = $"Generazione di {request.Quantity} immagini avviata.",
+                    originalRequest = request
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERRORE] Impossibile connettersi a RabbitMQ: {ex.Message}");
+                return StatusCode(500, "Errore interno: Il servizio di coda non risponde.");
+            }
         }
+    }
+
+    public class ImageGenerationRequest
+    {
+        public string Prompt { get; set; }          // Es: "Una banana nello spazio"
+        public int Quantity { get; set; } = 1;      // Es: 1 o 5 immagini
+        public bool AddExtraEffect { get; set; }    // Es: true/false per filtri extra
     }
 }
