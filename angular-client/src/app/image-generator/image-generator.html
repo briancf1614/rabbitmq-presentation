@@ -1,0 +1,60 @@
+<div class="image-generator-container">
+  <h2>Generatore di Immagini Asincrono 🖼️</h2>
+  <p class="arch-info">
+    Architettura: Angular (Frontend) ➡️ API (.NET Producer) ➡️ RabbitMQ (Coda) ➡️ Worker (.NET Consumer)
+  </p>
+
+  <form (ngSubmit)="submitRequest()">
+    <div class="form-group">
+      <label for="prompt">Descrizione Immagine (Prompt):</label>
+      <input
+        type="text"
+        id="prompt"
+        name="prompt"
+        class="form-control"
+        [(ngModel)]="generationRequest.prompt"
+        placeholder="Es: un drago con gli occhiali da sole che beve un caffè..."
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="quantity">Numero di Immagini da Generare:</label>
+      <input
+        type="number"
+        id="quantity"
+        name="quantity"
+        class="form-control"
+        [(ngModel)]="generationRequest.quantity"
+        min="1"
+        max="10" 
+      >
+      <small class="text-muted">Il Worker elaborerà questo numero di richieste.</small>
+    </div>
+
+    <div class="form-group form-check">
+      <input
+        type="checkbox"
+        id="extraEffect"
+        name="extraEffect"
+        class="form-check-input"
+        [(ngModel)]="generationRequest.addExtraEffect"
+      >
+      <label class="form-check-label" for="extraEffect">Applica Effetto Extra (Simulazione filtro)</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary" [disabled]="isLoading || !generationRequest.prompt">
+      <span *ngIf="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      {{ isLoading ? 'In Coda...' : 'Invia a RabbitMQ' }}
+    </button>
+  </form>
+
+  <div *ngIf="message" class="alert mt-4" [ngClass]="{'alert-success': !isLoading, 'alert-info': isLoading}">
+    <strong>Stato:</strong> {{ message }}
+  </div>
+
+  <hr>
+  
+  <h3>Immagini generate (Volume Condiviso)</h3>
+  <p class="text-muted">Qui dovresti mostrare le immagini lette dalla cartella condivisa.</p>
+  </div>
