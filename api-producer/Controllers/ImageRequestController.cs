@@ -13,15 +13,7 @@ namespace api_producer.Controllers
         [HttpPost("generate")]
         public async Task<IActionResult> RequestImageGeneration([FromBody] ImageGenerationRequest request)
         {
-            // 1. Validazione Base
-            if (string.IsNullOrWhiteSpace(request.Prompt))
-            {
-                return BadRequest("Il prompt è obbligatorio! Scrivi qualcosa.");
-            }
-
-            // Impostiamo un default se la quantità non viene mandata o è zero
-            if (request.Quantity <= 0) request.Quantity = 1;
-
+            request.RequestId = Guid.NewGuid().ToString();
             try
             {
                 // === LOGICA RABBITMQ (Versione Async) ===
@@ -74,8 +66,9 @@ namespace api_producer.Controllers
 
     public class ImageGenerationRequest
     {
-        public string Prompt { get; set; }          // Es: "Una banana nello spazio"
-        public int Quantity { get; set; } = 1;      // Es: 1 o 5 immagini
-        public bool AddExtraEffect { get; set; }    // Es: true/false per filtri extra
+        public string? RequestId { get; set; }
+        public string Prompt { get; set; }
+        public int Quantity { get; set; } = 1;
+        public bool AddExtraEffect { get; set; }
     }
 }

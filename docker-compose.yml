@@ -24,6 +24,8 @@ services:
       - RABBITMQ_HOST=rabbitmq
     depends_on:
       - rabbitmq
+    volumes:
+      - image_storage:/app/generated-images:ro
     networks:
       - rabbit-net
 

@@ -1,10 +1,12 @@
 export interface ImageRequest {
+  requestId: string | undefined; // <--- NUOVO
   prompt: string;
   quantity: number;
   addExtraEffect: boolean;
 }
 
 export interface ApiResponse {
+  requestId: string; // <--- MODIFICATO
   message: string;
   details: string;
   originalRequest: ImageRequest;

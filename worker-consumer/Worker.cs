@@ -1,3 +1,4 @@
+using Mscc.GenerativeAI;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -51,7 +52,7 @@ namespace worker_consumer
                                     _logger.LogInformation($" -> Generazione immagine {i + 1} di {request.Quantity}...");
 
                                     // Chiamata a Google (o logica fake per test)
-                                    await GenerateAndSaveImage(request.Prompt, i);
+                                    await GenerateAndSaveImage(request.Prompt, i, request.RequestId);
                                 }
 
                                 _logger.LogInformation(" [V] Ordine completato.");
@@ -83,48 +84,63 @@ namespace worker_consumer
             }
         }
 
-        private async Task GenerateAndSaveImage(string prompt, int index)
+        private async Task GenerateAndSaveImage(string prompt, int index, string requestId)
         {
             try
             {
-                // LEGGIAMO LA CHIAVE SEGRETA DALL'AMBIENTE (Iniettata da Docker)
                 string apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+                if (string.IsNullOrEmpty(apiKey)) throw new Exception("Manca GOOGLE_API_KEY");
 
-                // Qui dovresti mettere la tua logica reale verso Google Custom Search API
-                // Per la demo, simulo un download o creo un file dummy se non vuoi bruciare la quota API
+                // --- QUI INIZIA LA MAGIA DELLA LIBRERIA ---
 
-                // SIMULAZIONE (Sostituisci con la tua logica Google reale se vuoi)
-                // Usiamo un placeholder online per testare che salvi il file
-                string dummyImageUrl = $"https://placehold.co/600x400?text={Uri.EscapeDataString(prompt + " " + index)}";
-                byte[] imageBytes = await _httpClient.GetByteArrayAsync(dummyImageUrl);
+                // 1. Inizializziamo Google AI
+                var googleAI = new GoogleAI(apiKey);
 
-                // --- SALVATAGGIO SUL VOLUME CONDIVISO ---
-                // Il percorso /app/generated-images è mappato nel docker-compose
-                string folderPath = "/app/generated-images";
+                // 2. Selezioniamo il modello
+                // NOTA IMPORTANTE: Per generare immagini si usa solitamente "imagen-3.0-generate-001".
+                // "gemini-flash" di solito è per testo/multimodale in input.
+                var model = googleAI.GenerativeModel("imagen-3.0-generate-001");
 
-                // Assicuriamoci che la cartella esista
-                if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                // 3. Richiediamo l'immagine
+                // La libreria Mscc.GenerativeAI potrebbe richiedere un metodo specifico per le immagini
+                // a seconda della versione, ma GenerateContent è standard per i modelli generici.
+                var response = await model.GenerateContent(prompt);
 
-                // Nome file unico: timestamp_prompt_index.jpg
-                string safePrompt = prompt.Replace(" ", "_").Substring(0, Math.Min(10, prompt.Length)); // Primi 10 caratteri
-                string fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{safePrompt}_{index}.jpg";
-                string fullPath = Path.Combine(folderPath, fileName);
+                // 4. Estraiamo l'immagine (Base64)
+                // La struttura dipende da cosa restituisce esattamente il modello Imagen tramite questa libreria.
+                if (response.Candidates?[0].Content?.Parts?[0].InlineData != null)
+                {
+                    var base64Data = response.Candidates[0].Content.Parts[0].InlineData.Data;
+                    byte[] imageBytes = Convert.FromBase64String(base64Data);
 
-                await File.WriteAllBytesAsync(fullPath, imageBytes);
+                    // 5. Salvataggio su file
+                    string fileName = $"{requestId}_{index}.jpg";
+                    string folderPath = "/app/generated-images"; // Assicurarsi che il path esista nel container
 
-                _logger.LogInformation($"File salvato: {fullPath}");
+                    if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+
+                    string fullPath = Path.Combine(folderPath, fileName);
+
+                    await File.WriteAllBytesAsync(fullPath, imageBytes);
+                    _logger.LogInformation($"Immagine salvata: {fullPath}");
+                }
+                else
+                {
+                    _logger.LogWarning("La risposta di Google non conteneva dati immagine (InlineData null).");
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Errore nel download/salvataggio immagine: {ex.Message}");
+                _logger.LogError($"Errore nella generazione AI: {ex.Message}");
             }
         }
 
         // CLASSE DTO (Deve essere identica a quella dell'API)
         public class ImageGenerationRequest
         {
+            public string RequestId { get; set; } // <--- NUOVO CAMPO
             public string Prompt { get; set; }
-            public int Quantity { get; set; }
+            public int Quantity { get; set; } = 1;
             public bool AddExtraEffect { get; set; }
         }
     }
