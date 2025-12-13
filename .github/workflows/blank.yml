@@ -1,0 +1,37 @@
+name: Deploy on Ryzen Server
+
+# Si attiva quando fai push su "main"
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    # LA PARTE FONDAMENTALE:
+    # Dice a GitHub: "Non usare i vostri server, usa il MIO che ho appena installato"
+    runs-on: self-hosted
+
+    steps:
+    # 1. Scarica il codice aggiornato nella cartella del runner
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Esegue i comandi sul tuo server
+    - name: Build and Run Docker
+      run: |
+        echo "Inizio Deploy sul Ryzen..."
+        
+        # Creiamo le cartelle necessarie (se non ci sono) server per non farle creare a docker, che le crea pero con permessi root 
+        mkdir -p shared-assets
+        mkdir -p generated-images
+
+        # Avvia Docker Compose V2 (Nota lo spazio: 'docker compose', non col trattino)
+        # --build: Ricostruisce le immagini se il codice è cambiato
+        # -d: Background
+        # --remove-orphans: Pulisce container vecchi
+        docker compose up -d --build --remove-orphans
+
+        # Pulizia: Rimuove le immagini vecchie per non riempire il disco
+        docker image prune -f
+        
+        echo "Deploy completato! Sito online."
