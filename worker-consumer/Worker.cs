@@ -119,5 +119,13 @@ namespace worker_consumer
                 _logger.LogError($"Errore nel download/salvataggio immagine: {ex.Message}");
             }
         }
+
+        // CLASSE DTO (Deve essere identica a quella dell'API)
+        public class ImageGenerationRequest
+        {
+            public string Prompt { get; set; }
+            public int Quantity { get; set; }
+            public bool AddExtraEffect { get; set; }
+        }
     }
 }
