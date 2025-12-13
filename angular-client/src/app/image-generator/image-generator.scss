@@ -1,0 +1,336 @@
+/* === VARIABILI E THEME SETUP === */
+:host {
+  --bg-app: #0f0c29; /* Gradiente di sfondo */
+  --bg-card: rgba(255, 255, 255, 0.05); /* Effetto vetro scuro */
+  --primary: #00d2ff; /* Ciano elettrico */
+  --secondary: #3a7bd5; /* Blu profondo */
+  --accent: #f72585; /* Rosa shock per accenti */
+  --text-light: #ffffff;
+  --text-muted: #aab2bd;
+  --success: #00b894;
+  
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  display: block;
+  min-height: 100vh;
+  background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+  padding: 2rem;
+  color: var(--text-light);
+}
+
+/* === STRUTTURA PRINCIPALE === */
+.main-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.generator-card {
+  background: var(--bg-card);
+  
+  /* Aggiungi questa riga per Safari/iOS */
+  -webkit-backdrop-filter: blur(15px); 
+  
+  /* Standard per Chrome, Edge, Firefox */
+  backdrop-filter: blur(15px); 
+  
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  padding: 3rem;
+}
+
+/* === HEADER E ARCHITETTURA === */
+.card-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.card-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(to right, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.architecture-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+}
+
+.arch-node {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+  padding: 0.8rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.arch-node.angular { color: #dd0031; }
+.arch-node.api { color: #512bd4; }
+.arch-node.rabbit { color: #ff6600; }
+.arch-node.worker { color: var(--success); }
+
+.arch-arrow {
+  font-size: 1.5rem;
+  margin: 0 1rem;
+  color: var(--primary);
+  animation: pulseArrow 2s infinite;
+}
+
+@keyframes pulseArrow {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(5px); }
+}
+
+/* === FORM STYLING === */
+.form-group {
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.form-control {
+  width: 100%;
+  padding: 1rem 1.2rem;
+  font-size: 1.1rem;
+  color: var(--text-light);
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+}
+
+/* Floating Label trick */
+.floating-label label {
+  position: absolute;
+  top: 1rem;
+  left: 1.2rem;
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  background: transparent;
+}
+
+.floating-label input:focus + label,
+.floating-label input:not(:placeholder-shown) + label {
+  top: -0.8rem;
+  left: 1rem;
+  font-size: 0.85rem;
+  color: var(--primary);
+  background: var(--bg-app); /* Fallback */
+  padding: 0 0.4rem;
+  border-radius: 4px;
+}
+
+.form-row {
+  display: flex;
+  gap: 2rem;
+}
+
+.col-half {
+  flex: 1;
+}
+
+.static-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.number-input {
+  padding: 0.8rem;
+}
+
+/* Custom Checkbox styling */
+/* === CORREZIONE CHECKBOX COMPATIBILITÀ === */
+.custom-checkbox-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 35px;
+  margin-top: 1.8rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  
+  /* PREFISSI PER TUTTI I BROWSER */
+  -webkit-user-select: none; /* Safari, Chrome, Opera */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* Internet Explorer/Edge legacy */
+  user-select: none;         /* Standard moderno */
+}
+
+.custom-checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 25px;
+  width: 25px;
+  background-color: rgba(0,0,0,0.3);
+  border: 2px solid var(--text-muted);
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.custom-checkbox-container:hover input ~ .checkmark {
+  border-color: var(--primary);
+}
+
+.custom-checkbox-container input:checked ~ .checkmark {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.custom-checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.custom-checkbox-container .checkmark:after {
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* === BOTTONE === */
+.btn-submit {
+  width: 100%;
+  padding: 1.2rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-submit:not(:disabled):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px -10px rgba(0, 210, 255, 0.5);
+}
+
+/* Effetto "Glow" al passaggio */
+.btn-submit.glow-on-hover:not(:disabled)::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to bottom right, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    transition: all 0.5s;
+    opacity: 0;
+}
+.btn-submit.glow-on-hover:not(:disabled):hover::after {
+    left: 100%;
+    opacity: 1;
+    transition: 0.7s;
+}
+
+.btn-submit:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* === MESSAGGI DI STATO === */
+.status-message {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: bold;
+  animation: slideUp 0.5s ease;
+}
+.status-message.success { background: rgba(0, 184, 148, 0.2); color: var(--success); border: 1px solid var(--success); }
+.status-message.info { background: rgba(0, 210, 255, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === RISULTATI === */
+.results-section {
+  margin-top: 4rem;
+  text-align: center;
+}
+
+.results-section h2 {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.results-placeholder {
+  background: rgba(0,0,0,0.2);
+  border: 3px dashed var(--text-muted);
+  border-radius: 20px;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}

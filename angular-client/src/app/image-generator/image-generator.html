@@ -1,60 +1,80 @@
-<div class="image-generator-container">
-  <h2>Generatore di Immagini Asincrono 🖼️</h2>
-  <p class="arch-info">
-    Architettura: Angular (Frontend) ➡️ API (.NET Producer) ➡️ RabbitMQ (Coda) ➡️ Worker (.NET Consumer)
-  </p>
+<div class="main-container">
+  <div class="generator-card">
+    
+    <header class="card-header">
+      <h1>⚡ Generatore Asincrono</h1>
+      <p class="subtitle">Potenziato da Microservizi & RabbitMQ</p>
+      
+      <div class="architecture-visual">
+        <div class="arch-node angular" title="Frontend">🅰️<br>Angular</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node api" title="Producer">🔌<br>API .NET</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node rabbit" title="Message Broker">🐇<br>RabbitMQ</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node worker" title="Consumer">🤖<br>Worker</div>
+      </div>
+    </header>
 
-  <form (ngSubmit)="submitRequest()">
-    <div class="form-group">
-      <label for="prompt">Descrizione Immagine (Prompt):</label>
-      <input
-        type="text"
-        id="prompt"
-        name="prompt"
-        class="form-control"
-        [(ngModel)]="generationRequest.prompt"
-        placeholder="Es: un drago con gli occhiali da sole che beve un caffè..."
-        required
-      >
-    </div>
+    <main class="card-body">
+      <form (ngSubmit)="submitRequest()">
+        
+        <div class="form-group floating-label">
+          <input
+            type="text"
+            id="prompt"
+            class="form-control"
+            [(ngModel)]="generationRequest.prompt"
+            required
+            placeholder=" " >
+          <label for="prompt">✨ Descrivi l'immagine dei tuoi sogni...</label>
+        </div>
 
-    <div class="form-group">
-      <label for="quantity">Numero di Immagini da Generare:</label>
-      <input
-        type="number"
-        id="quantity"
-        name="quantity"
-        class="form-control"
-        [(ngModel)]="generationRequest.quantity"
-        min="1"
-        max="10" 
-      >
-      <small class="text-muted">Il Worker elaborerà questo numero di richieste.</small>
-    </div>
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="quantity" class="static-label">🔢 Quantità</label>
+            <input
+              type="number"
+              id="quantity"
+              class="form-control number-input"
+              [(ngModel)]="generationRequest.quantity"
+              min="1"
+              max="10"
+            >
+          </div>
 
-    <div class="form-group form-check">
-      <input
-        type="checkbox"
-        id="extraEffect"
-        name="extraEffect"
-        class="form-check-input"
-        [(ngModel)]="generationRequest.addExtraEffect"
-      >
-      <label class="form-check-label" for="extraEffect">Applica Effetto Extra (Simulazione filtro)</label>
-    </div>
+          <div class="form-group col-half checkbox-group">
+             <label class="custom-checkbox-container">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="generationRequest.addExtraEffect"
+                >
+                <span class="checkmark"></span>
+                🌟 Applica Filtro "Cyberpunk"
+             </label>
+          </div>
+        </div>
 
-    <button type="submit" class="btn btn-primary" [disabled]="isLoading || !generationRequest.prompt">
-      <span *ngIf="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      {{ isLoading ? 'In Coda...' : 'Invia a RabbitMQ' }}
-    </button>
-  </form>
+        <button type="submit" class="btn-submit glow-on-hover" [disabled]="isLoading || !generationRequest.prompt" [ngClass]="{'loading': isLoading}">
+          <span *ngIf="!isLoading">🚀 Invia alla Coda</span>
+          <span *ngIf="isLoading">
+             <span class="spinner"></span> Elaborazione in corso...
+          </span>
+        </button>
+      </form>
 
-  <div *ngIf="message" class="alert mt-4" [ngClass]="{'alert-success': !isLoading, 'alert-info': isLoading}">
-    <strong>Stato:</strong> {{ message }}
+      <div *ngIf="message" class="status-message" [ngClass]="{'success': !isLoading, 'info': isLoading}">
+        {{ message }}
+      </div>
+    </main>
   </div>
 
-  <hr>
-  
-  <h3>Immagini generate (Volume Condiviso)</h3>
-  <p class="text-muted">Qui dovresti mostrare le immagini lette dalla cartella condivisa.</p>
-  </div>
+  <section class="results-section mt-5">
+    <h2>🎨 Galleria Risultati (Volume Condiviso)</h2>
+    <div class="results-placeholder">
+      <div class="placeholder-icon">🖼️</div>
+      <p>Le immagini generate dal Worker appariranno qui.</p>
+      <p class="small">In attesa di segnale dal backend...</p>
+    </div>
+  </section>
+</div>
