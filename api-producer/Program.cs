@@ -16,11 +16,23 @@ if (!Directory.Exists(imagesPath))
     Directory.CreateDirectory(imagesPath);
 }
 
-// Diciamo all'API di servire i file statici da quella cartella
+// Creiamo un provider per non ripetere il codice
+var fileProvider = new PhysicalFileProvider(imagesPath);
+var requestPath = "/images";
+
+// 2. ABILITA LA VISIONE DEI FILE (Se conosci il nome esatto)
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(imagesPath),
-    RequestPath = "/images" // L'URL sarà: http://localhost:8080/images/tua_foto.jpg
+    FileProvider = fileProvider,
+    RequestPath = requestPath
+});
+
+// 3. ABILITA L'ELENCO DEI FILE (Quello che vuoi tu!)
+// Ora se vai su /images vedrai la lista HTML dei file
+app.UseDirectoryBrowser(new DirectoryBrowserOptions
+{
+    FileProvider = fileProvider,
+    RequestPath = requestPath
 });
 
 Console.WriteLine($"[INFO] Servendo immagini da: {imagesPath}");
