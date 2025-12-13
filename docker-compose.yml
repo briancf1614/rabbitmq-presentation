@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 🐰 1. RABBITMQ (Il Message Broker)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # Porta per i servizi .NET
+      - "15672:15672" # Dashboard Web (User: guest / Pass: guest)
+    networks:
+      - rabbit-net
+
+  # 📨 2. API PRODUCER (.NET Web API)
+  api-producer:
+    build: ./api-producer
+    container_name: api-producer
+    restart: always
+    # Cloudflare parlerà con questo container sulla porta 8080 interna
+    # Mappiamo la 3000 solo per debug locale se serve
+    ports:
+      - "3000:8080"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq
+    networks:
+      - rabbit-net
+
+  # 👷 3. WORKER CONSUMER (.NET Worker Service)
+  worker-consumer:
+    build: ./worker-consumer
+    container_name: worker-consumer
+    restart: always
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    volumes:
+      # DOVE LEGGE: La cartella con l'immagine "finta" (Nano Banana)
+      - ./shared-assets:/app/shared-assets
+      # DOVE SCRIVE: La cartella dove salva i risultati generati
+      - ./generated-images:/app/results
+    depends_on:
+      - rabbitmq
+    networks:
+      - rabbit-net
+
+  # 🌐 4. ANGULAR CLIENT (Frontend)
+  angular-client:
+    build: ./angular-client
+    container_name: angular-client
+    restart: always
+    # Cloudflare parlerà con questo container sulla porta 80 interna
+    depends_on:
+      - api-producer
+    volumes:
+      # IL TRUCCO DI MAGIA:
+      # Mappiamo la cartella dove il Worker scrive le immagini (generated-images)
+      # DENTRO la cartella degli asset di Nginx.
+      # Così Angular può mostrare l'immagine appena creata.
+      - ./generated-images:/usr/share/nginx/html/assets/generated
+    networks:
+      - rabbit-net
+
+  # ☁️ 5. CLOUDFLARE TUNNEL (Zero Trust)
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: always
+    # 👇 INCOLLA QUI SOTTO IL TUO TOKEN DI CLOUDFLARE 👇
+    command: tunnel run --token eyJhIjoiNjU3ZDlkMjUyNGRlZWJjYzZmMmQwNzFmNTI0Zjc2NGUiLCJ0IjoiNmM4OGEzNTctOWNjZS00YzUwLTgxNTktM2IyYjEyOGI4YWM4IiwicyI6Ik9EWTNaamhpWkRndFpUbGhOaTAwWmpZNUxXSmlOelV0WVRWbE9HUTNPVEEzTURReCJ9
+    networks:
+      - rabbit-net
+
+networks:
+  rabbit-net:
+    driver: bridge
