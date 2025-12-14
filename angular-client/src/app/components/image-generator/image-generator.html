@@ -13,7 +13,7 @@
       (ngModelChange)="promptText.set($event)"
       rows="3"
       placeholder="Es: Un drago fatto di cristallo..."
-      [disabled]="isLoading()">
+      [disabled]="isSubmitting()">
     </textarea>
   </div>
 
@@ -29,7 +29,7 @@
         (ngModelChange)="quantity.set($event)"
         min="1"
         max="10"
-        [disabled]="isLoading()">
+        [disabled]="isSubmitting()">
     </div>
 
     <!-- RABBIT -->
@@ -42,7 +42,7 @@
           type="checkbox"
           [ngModel]="useRabbit()"
           (ngModelChange)="useRabbit.set($event)"
-          [disabled]="isLoading()">
+          [disabled]="isSubmitting()">
         <span>Usa RabbitMQ (async)</span>
       </label>
     </div>
@@ -53,9 +53,9 @@
     <button
       class="btn-primary"
       (click)="generateImage()"
-      [disabled]="!promptText() || isLoading()">
+      [disabled]="!promptText() || isSubmitting()">
 
-      @if (isLoading()) {
+      @if (isSubmitting()) {
         <span>Processando...</span>
       } @else {
         <span>Genera Immagini</span>
