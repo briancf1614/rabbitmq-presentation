@@ -33,7 +33,6 @@ services:
   # 👷 3. WORKER CONSUMER (.NET Worker Service)
   worker-consumer:
     build: ./worker-consumer
-    container_name: worker-consumer
     restart: always
     environment:
       - RABBITMQ_HOST=rabbitmq
