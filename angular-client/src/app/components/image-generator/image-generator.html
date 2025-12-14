@@ -4,6 +4,7 @@
     <p>Configura la tua richiesta</p>
   </header>
 
+  <!-- PROMPT -->
   <div class="form-group">
     <label for="promptInput">Descrizione</label>
     <textarea
@@ -16,8 +17,10 @@
     </textarea>
   </div>
 
+  <!-- OPTIONS -->
   <div class="options-row">
-    <div class="form-group half-width">
+    <!-- QUANTITA -->
+    <div class="form-group">
       <label for="qtyInput">Quantità</label>
       <input
         id="qtyInput"
@@ -29,9 +32,11 @@
         [disabled]="isLoading()">
     </div>
 
-    <!-- Checkbox pulito -->
-    <div class="checkbox-group">
-      <label for="rabbitInput">
+    <!-- RABBIT -->
+    <div class="form-group checkbox-group">
+      <label>Modalità</label>
+
+      <label class="checkbox-pill" for="rabbitInput">
         <input
           id="rabbitInput"
           type="checkbox"
@@ -43,6 +48,7 @@
     </div>
   </div>
 
+  <!-- ACTION -->
   <div class="actions">
     <button
       class="btn-primary"
@@ -57,6 +63,7 @@
     </button>
   </div>
 
+  <!-- STATUS -->
   @if (responseMessage()) {
     <div class="alert" [class.error]="hasError()" [class.success]="!hasError()">
       {{ responseMessage() }}
@@ -64,6 +71,7 @@
   }
 </section>
 
+<!-- RESULTS -->
 @if (generatedImages().length > 0) {
   <section class="results-area">
     <h3>Tutte le Creazioni ({{ generatedImages().length }})</h3>
@@ -72,7 +80,9 @@
       @for (imgUrl of generatedImages(); track imgUrl) {
         <div class="image-card fade-in">
           <img [src]="imgUrl" alt="AI Generated Art">
-          <a [href]="imgUrl" target="_blank" class="download-link">Scarica</a>
+          <a [href]="imgUrl" target="_blank" class="download-link">
+            Scarica
+          </a>
         </div>
       }
     </div>

@@ -23,7 +23,7 @@
   color: #6b7280;
 }
 
-/* FORM */
+/* FORM GROUP */
 .form-group {
   margin-top: 14px;
   display: grid;
@@ -35,6 +35,7 @@
   color: #374151;
 }
 
+/* INPUTS */
 textarea,
 input[type="number"] {
   width: 100%;
@@ -68,7 +69,7 @@ input:disabled {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-  align-items: center;
+  align-items: end;
   margin-top: 12px;
 }
 
@@ -78,12 +79,17 @@ input:disabled {
   }
 }
 
-/* CHECKBOX STYLE (FIX TOTALE) */
-.checkbox-group label {
+/* CHECKBOX */
+.checkbox-group {
+  margin-top: 14px;
+}
+
+.checkbox-pill {
   display: flex;
   align-items: center;
   gap: 10px;
 
+  width: 100%;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,.12);
@@ -95,19 +101,19 @@ input:disabled {
   user-select: none;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-pill input[type="checkbox"] {
   width: 18px;
   height: 18px;
   margin: 0;
 }
 
-.checkbox-group label:hover {
+.checkbox-pill:hover {
   background: #f9fafb;
 }
 
 /* ACTIONS */
 .actions {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .btn-primary {
