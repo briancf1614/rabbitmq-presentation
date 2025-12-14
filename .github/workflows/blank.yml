@@ -27,7 +27,7 @@ jobs:
         # Creiamo le cartelle necessarie (se non ci sono) server per non farle creare a docker, che le crea pero con permessi root 
         mkdir -p shared-assets
         mkdir -p generated-images
-
+        chmod -R 777 generated-images
         # Avvia Docker Compose V2 (Nota lo spazio: 'docker compose', non col trattino)
         # --build: Ricostruisce le immagini se il codice è cambiato
         # -d: Background

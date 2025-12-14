@@ -25,7 +25,7 @@ services:
     depends_on:
       - rabbitmq
     volumes:
-      - image_storage:/app/generated-images:ro
+      - ./generated-images:/app/generated-images:ro
     networks:
       - rabbit-net
 
@@ -38,7 +38,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - GOOGLE_API_KEY=${GOOGLE_KEY}
     volumes:
-      - image_storage:/app/generated-images:rw
+      - ./generated-images:/app/generated-images:rw
     depends_on:
       - rabbitmq
     networks:
@@ -54,7 +54,7 @@ services:
       - api-producer
     volumes:
       # Mappiamo lo stesso volume dentro gli asset di Nginx
-      - image_storage:/usr/share/nginx/html/assets/generated:ro
+      - ./generated-images:/usr/share/nginx/html/assets/generated:ro
     networks:
       - rabbit-net
 
@@ -71,6 +71,3 @@ services:
 networks:
   rabbit-net:
     driver: bridge
-
-volumes:
-  image_storage:
