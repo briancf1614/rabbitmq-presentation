@@ -6,33 +6,31 @@
 
   <div class="form-group">
     <label for="promptInput">Descrizione</label>
-    
-    <textarea 
+    <textarea
       id="promptInput"
-      [ngModel]="promptText()" 
+      [ngModel]="promptText()"
       (ngModelChange)="promptText.set($event)"
-      rows="3" 
+      rows="3"
       placeholder="Es: Un drago fatto di cristallo..."
       [disabled]="isLoading()">
     </textarea>
   </div>
 
   <div class="options-row">
-    
     <div class="form-group half-width">
       <label for="qtyInput">Quantità</label>
-      <input 
+      <input
         id="qtyInput"
-        type="number" 
+        type="number"
         [ngModel]="quantity()"
         (ngModelChange)="quantity.set($event)"
-        min="1" 
+        min="1"
         max="10"
-        placeholder="1"
         [disabled]="isLoading()">
     </div>
 
-    <div class="form-group checkbox-group">
+    <!-- Checkbox pulito -->
+    <div class="checkbox-group">
       <label for="rabbitInput">
         <input
           id="rabbitInput"
@@ -43,15 +41,14 @@
         <span>Usa RabbitMQ (async)</span>
       </label>
     </div>
-
   </div>
 
   <div class="actions">
-    <button 
-      class="btn-primary" 
+    <button
+      class="btn-primary"
       (click)="generateImage()"
       [disabled]="!promptText() || isLoading()">
-      
+
       @if (isLoading()) {
         <span>Processando...</span>
       } @else {
@@ -65,13 +62,12 @@
       {{ responseMessage() }}
     </div>
   }
-
 </section>
 
 @if (generatedImages().length > 0) {
   <section class="results-area">
     <h3>Tutte le Creazioni ({{ generatedImages().length }})</h3>
-    
+
     <div class="gallery-grid">
       @for (imgUrl of generatedImages(); track imgUrl) {
         <div class="image-card fade-in">

@@ -1,16 +1,20 @@
-:host { display: block; }
+:host {
+  display: block;
+}
 
+/* CARD */
 .generator-card {
   background: #fff;
   border: 1px solid rgba(0,0,0,.08);
   border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.08);
 }
 
+/* HEADER */
 .generator-card header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   color: #111827;
 }
 
@@ -19,6 +23,7 @@
   color: #6b7280;
 }
 
+/* FORM */
 .form-group {
   margin-top: 14px;
   display: grid;
@@ -30,81 +35,130 @@
   color: #374151;
 }
 
-textarea, input[type="number"] {
+textarea,
+input[type="number"] {
   width: 100%;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,.12);
   padding: 10px 12px;
   font-size: .95rem;
-  transition: box-shadow .18s ease, border-color .18s ease;
 }
 
-textarea { resize: vertical; min-height: 90px; }
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
 
-textarea:focus, input[type="number"]:focus {
+textarea:focus,
+input[type="number"]:focus {
   outline: none;
   border-color: rgba(59,130,246,.75);
   box-shadow: 0 0 0 4px rgba(59,130,246,.15);
 }
 
-textarea:disabled, input:disabled {
+textarea:disabled,
+input:disabled {
+  background: #f9fafb;
   opacity: .6;
   cursor: not-allowed;
-  background: #f9fafb;
 }
 
+/* OPTIONS ROW */
 .options-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-  align-items: end;
-  margin-top: 10px;
+  align-items: center;
+  margin-top: 12px;
 }
 
 @media (max-width: 640px) {
-  .options-row { grid-template-columns: 1fr; }
+  .options-row {
+    grid-template-columns: 1fr;
+  }
 }
 
+/* CHECKBOX STYLE (FIX TOTALE) */
 .checkbox-group label {
   display: flex;
-  gap: 10px;
   align-items: center;
-  font-weight: 700;
-  color: #374151;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: #fff;
+
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  user-select: none;
 }
 
-.actions { margin-top: 14px; }
+.checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.checkbox-group label:hover {
+  background: #f9fafb;
+}
+
+/* ACTIONS */
+.actions {
+  margin-top: 16px;
+}
 
 .btn-primary {
   width: 100%;
-  padding: 10px 12px;
-  border: 0;
+  padding: 11px 14px;
   border-radius: 12px;
+  border: 0;
   background: #3b82f6;
   color: #fff;
   font-weight: 800;
   cursor: pointer;
-  transition: transform .12s ease, filter .18s ease, opacity .18s ease;
+  transition: transform .12s ease, filter .18s ease;
 }
 
-.btn-primary:hover { filter: brightness(1.05); }
-.btn-primary:active { transform: scale(.99); }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
 
+.btn-primary:active {
+  transform: scale(.98);
+}
+
+.btn-primary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* ALERT */
 .alert {
-  margin-top: 12px;
+  margin-top: 14px;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,.10);
-  background: #f9fafb;
   font-weight: 700;
 }
 
-.alert.success { border-color: rgba(16,185,129,.35); background: rgba(16,185,129,.10); color: #065f46; }
-.alert.error   { border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10); color: #7f1d1d; }
+.alert.success {
+  background: rgba(16,185,129,.10);
+  border-color: rgba(16,185,129,.35);
+  color: #065f46;
+}
 
+.alert.error {
+  background: rgba(239,68,68,.10);
+  border-color: rgba(239,68,68,.35);
+  color: #7f1d1d;
+}
+
+/* RESULTS */
 .results-area {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .results-area h3 {
@@ -124,7 +178,6 @@ textarea:disabled, input:disabled {
   border-radius: 14px;
   padding: 10px;
   box-shadow: 0 8px 20px rgba(0,0,0,.08);
-  overflow: hidden;
 }
 
 .image-card img {
@@ -132,19 +185,18 @@ textarea:disabled, input:disabled {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 10px;
-  display: block;
 }
 
 .download-link {
-  display: inline-block;
+  display: block;
   margin-top: 10px;
   padding: 8px 10px;
   border-radius: 12px;
   border: 1px solid rgba(59,130,246,.45);
   color: #2563eb;
-  text-decoration: none;
   font-weight: 800;
-  transition: background .18s ease, color .18s ease;
+  text-align: center;
+  text-decoration: none;
 }
 
 .download-link:hover {
@@ -152,7 +204,10 @@ textarea:disabled, input:disabled {
   color: #fff;
 }
 
-.fade-in { animation: fadeIn .35s ease-out; }
+/* ANIMATION */
+.fade-in {
+  animation: fadeIn .35s ease-out;
+}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
