@@ -80,4 +80,3 @@ namespace api_producer.Controllers
         public bool AddExtraEffect { get; set; }
     }
 }
-}
