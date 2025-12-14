@@ -2,7 +2,7 @@ export interface ImageRequest {
   requestId?: string;
   prompt: string;
   quantity: number;
-  addExtraEffect: boolean;
+  useRabbit: boolean;
 }
 
 export interface ApiResponse {
@@ -15,5 +15,5 @@ export interface CardData {
   title: string;
   description: string;
   status: 'active' | 'inactive' | 'pending';
-  imageUrl?: string; // opzionale
+  imageUrl?: string;
 }

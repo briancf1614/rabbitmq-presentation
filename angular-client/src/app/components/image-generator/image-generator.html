@@ -33,14 +33,14 @@
     </div>
 
     <div class="form-group checkbox-group">
-      <label for="effectInput">
-        <input 
-          id="effectInput"
-          type="checkbox" 
-          [ngModel]="addExtraEffect()"
-          (ngModelChange)="addExtraEffect.set($event)"
+      <label for="rabbitInput">
+        <input
+          id="rabbitInput"
+          type="checkbox"
+          [ngModel]="useRabbit()"
+          (ngModelChange)="useRabbit.set($event)"
           [disabled]="isLoading()">
-        <span>Aggiungi Effetti Extra</span>
+        <span>Usa RabbitMQ (async)</span>
       </label>
     </div>
 
