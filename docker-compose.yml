@@ -22,6 +22,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - RABBITMQ_HOST=rabbitmq
+      - GOOGLE_API_KEY=${GOOGLE_KEY}
     depends_on:
       - rabbitmq
     volumes:
