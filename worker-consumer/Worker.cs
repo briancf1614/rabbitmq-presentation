@@ -1,8 +1,9 @@
-using Mscc.GenerativeAI;
+ï»¿using Mscc.GenerativeAI;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace worker_consumer
 {
@@ -44,9 +45,9 @@ namespace worker_consumer
 
                             if (request != null)
                             {
-                                _logger.LogInformation($"Ricevuto ordine: {request.Prompt} (Quantità: {request.Quantity})");
+                                _logger.LogInformation($"Ricevuto ordine: {request.Prompt} (QuantitÃ : {request.Quantity})");
 
-                                // 2. CICLO PER LA QUANTITÀ (Scaling interno)
+                                // 2. CICLO PER LA QUANTITÃ€ (Scaling interno)
                                 for (int i = 0; i < request.Quantity; i++)
                                 {
                                     _logger.LogInformation($" -> Generazione immagine {i + 1} di {request.Quantity}...");
@@ -86,51 +87,74 @@ namespace worker_consumer
 
         private async Task GenerateAndSaveImage(string prompt, int index, string requestId)
         {
+            string folderPath = "/app/generated-images";
+            string fileName = $"{requestId}_{index}.jpg";
+            string fullPath = Path.Combine(folderPath, fileName);
+
+            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+
+            string apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                _logger.LogError("Manca GOOGLE_API_KEY");
+                return;
+            }
+
             try
             {
-                string apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
-                if (string.IsNullOrEmpty(apiKey)) throw new Exception("Manca GOOGLE_API_KEY");
+                _logger.LogInformation($"ðŸŽ¨ Chiedo a Gemini 2.5 Flash: {prompt}");
 
-                // --- QUI INIZIA LA MAGIA DELLA LIBRERIA ---
+                // 1. URL DALLA TUA DOCUMENTAZIONE
+                string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={apiKey}";
 
-                // 1. Inizializziamo Google AI
-                var googleAI = new GoogleAI(apiKey);
-
-                // 2. Selezioniamo il modello
-                // "gemini-flash" di solito è per testo/multimodale in input.
-                var model = googleAI.GenerativeModel("gemini-2.5-flash-image");
-
-                // 3. Richiediamo l'immagine
-                // La libreria Mscc.GenerativeAI potrebbe richiedere un metodo specifico per le immagini
-                // a seconda della versione, ma GenerateContent è standard per i modelli generici.
-                var response = await model.GenerateContent(prompt);
-
-                // 4. Estraiamo l'immagine (Base64)
-                // La struttura dipende da cosa restituisce esattamente il modello Imagen tramite questa libreria.
-                if (response.Candidates?[0].Content?.Parts?[0].InlineData != null)
+                // 2. PAYLOAD JSON (Come da documentazione CURL)
+                // Nota: "responseModalities": ["IMAGE"] Ã¨ il trucco per avere le immagini!
+                var payload = new
                 {
-                    var base64Data = response.Candidates[0].Content.Parts[0].InlineData.Data;
+                    contents = new[]
+                    {
+                        new { parts = new[] { new { text = prompt } } }
+                    },
+                    generationConfig = new
+                    {
+                        responseModalities = new[] { "IMAGE" }, // <--- IMPORTANTE
+                        imageConfig = new { aspectRatio = "1:1" }
+                    }
+                };
+
+                string jsonPayload = JsonSerializer.Serialize(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                using var client = new HttpClient();
+                var response = await client.PostAsync(url, content);
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Google Error ({response.StatusCode}): {responseString}");
+                }
+
+                // 3. PARSING DELLA RISPOSTA (Secondo la struttura Gemini)
+                // Cerca: candidates[0].content.parts[0].inlineData.data
+                var jsonNode = JsonNode.Parse(responseString);
+
+                // Navighiamo nel JSON in modo sicuro
+                var base64Data = jsonNode?["candidates"]?[0]?["content"]?["parts"]?[0]?["inlineData"]?["data"]?.ToString();
+
+                if (!string.IsNullOrEmpty(base64Data))
+                {
                     byte[] imageBytes = Convert.FromBase64String(base64Data);
-
-                    // 5. Salvataggio su file
-                    string fileName = $"{requestId}_{index}.jpg";
-                    string folderPath = "/app/generated-images"; // Assicurarsi che il path esista nel container
-
-                    if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
-
-                    string fullPath = Path.Combine(folderPath, fileName);
-
                     await File.WriteAllBytesAsync(fullPath, imageBytes);
-                    _logger.LogInformation($"Immagine salvata: {fullPath}");
+                    _logger.LogInformation($"âœ… Immagine salvata: {fullPath}");
                 }
                 else
                 {
-                    _logger.LogWarning("La risposta di Google non conteneva dati immagine (InlineData null).");
+                    throw new Exception("Nessun dato immagine trovato nel JSON.");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Errore nella generazione AI: {ex.Message}");
+                _logger.LogError($"âŒ Errore generazione: {ex.Message}");
             }
         }
 
