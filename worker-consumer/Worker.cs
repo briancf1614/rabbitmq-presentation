@@ -97,9 +97,8 @@ namespace worker_consumer
                 var googleAI = new GoogleAI(apiKey);
 
                 // 2. Selezioniamo il modello
-                // NOTA IMPORTANTE: Per generare immagini si usa solitamente "imagen-3.0-generate-001".
                 // "gemini-flash" di solito è per testo/multimodale in input.
-                var model = googleAI.GenerativeModel("imagen-3.0-generate-001");
+                var model = googleAI.GenerativeModel("gemini-2.5-flash-image");
 
                 // 3. Richiediamo l'immagine
                 // La libreria Mscc.GenerativeAI potrebbe richiedere un metodo specifico per le immagini
