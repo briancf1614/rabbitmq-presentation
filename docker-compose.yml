@@ -26,7 +26,7 @@ services:
     depends_on:
       - rabbitmq
     volumes:
-      - ./generated-images:/app/generated-images:ro
+      - ./generated-images:/app/generated-images:rw
     networks:
       - rabbit-net
 
