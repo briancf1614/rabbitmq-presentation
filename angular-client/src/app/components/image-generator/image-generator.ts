@@ -40,19 +40,26 @@ private imageService = inject(ImageGeneratorService);
 
   // 2. CHIAMATA "FIRE & FORGET"
   this.imageService.requestGeneration(requestData).subscribe({
-    next: (res) => {
-      // 3. QUI È LA PROVA DI RABBITMQ!
-      // Siamo arrivati qui in pochi millisecondi. L'API ci ha risposto SUBITO.
-      // Se fosse sincrono, saremmo ancora bloccati ad aspettare.
-      
-      const apiRequestId = res.requestId; 
-      
-      // Diciamo all'utente che l'ordine è in coda
-      this.responseMessage.set(`✅ Ordine preso in carico (Ticket: ${apiRequestId}). Il Worker ci sta lavorando...`);
+  next: (res) => {
+    // 1. IMPRIME ESTO EN LA CONSOLA (F12) PARA VERIFICAR
+    console.log('Respuesta de la API:', res); 
 
-      // Ora il frontend "dimentica" e controlla con calma ogni tanto
-      this.waitForImage(apiRequestId);
-    },
+    // 2. Extraemos el ID de la respuesta
+    // Si en la consola ves 'requestId', úsalo aquí. 
+    // Si ves 'RequestId' (mayúscula), cámbialo aquí.
+    const apiRequestId = res.requestId; 
+
+    if (!apiRequestId) {
+      console.error('¡La API no devolvió un ID!');
+      this.responseMessage.set('Error: ID no recibido.');
+      return;
+    }
+
+    this.responseMessage.set(`Procesando ID: ${apiRequestId}...`);
+
+    // 3. Pasamos ese ID a la función de espera
+    this.waitForImage(apiRequestId); 
+  },
     error: (err) => {
       this.hasError.set(true);
       this.responseMessage.set('❌ Errore: RabbitMQ non raggiungibile.');
