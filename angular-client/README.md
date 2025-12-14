@@ -1,59 +1,28 @@
-# AngularClient
+# 🐰 RabbitMQ Demo - Frontend (Angular)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.8.
+> **⚠️ ATTENZIONE: LEGGERE PRIMA DI PROCEDERE**
+>
+> Questo progetto Angular è stato **interamente generato tramite Intelligenza Artificiale** allo scopo esclusivo di fornire una UI funzionante per la demo.
+>
+> **IL CODICE SORGENTE DI QUESTO FRONTEND NON HA ALCUN VALORE DIDATTICO.**
 
-## Development server
+## 🚫 Disclaimer Importante
+1.  **Codice "Usa e Getta":** Non analizzare, non giudicare e non prendere spunto dal codice TypeScript/HTML contenuto in questa cartella. Non segue best practices, pattern architetturali o standard di qualità. È stato generato solo per avere dei "bottoni da cliccare".
+2.  **RabbitMQ non è qui:** Questo frontend **NON** contiene alcuna logica relativa a RabbitMQ. Angular non comunica con RabbitMQ.
+3.  **Funzionamento:** Questa interfaccia si limita a inviare semplici chiamate HTTP POST alle API del Backend (.NET). È il Backend che gestisce tutta la logica di code, exchange e consumer.
 
-To start a local development server, run:
+## 🎯 Scopo del Progetto
+L'unico scopo di questa interfaccia è visivo:
+1.  Premere un pulsante per scatenare il carico di lavoro.
+2.  Mostrare la differenza visiva (UI bloccata vs UI fluida) tra una chiamata Sincrona e una Asincrona gestita con code.
 
-```bash
-ng serve
-```
+## 🚀 Come avviare (se proprio devi)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Se devi avviare la UI per testare il backend:
 
 ```bash
-ng generate --help
-```
+# 1. Installa le dipendenze
+npm install
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+# 2. Avvia il server di sviluppo
+npm start
