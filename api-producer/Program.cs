@@ -9,13 +9,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngular", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 var app = builder.Build();
-
+app.UseCors("AllowAll");
 // === CONFIGURAZIONE IMMAGINI ===
 string imagesPath = Path.Combine(Directory.GetCurrentDirectory(), "generated-images");
 if (!Directory.Exists(imagesPath)) Directory.CreateDirectory(imagesPath);
