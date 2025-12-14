@@ -32,7 +32,7 @@ jobs:
         # --build: Ricostruisce le immagini se il codice è cambiato
         # -d: Background
         # --remove-orphans: Pulisce container vecchi
-        docker compose up -d --build --remove-orphans
+        docker compose up -d --build --remove-orphans --scale worker-consumer=10
 
         # Pulizia: Rimuove le immagini vecchie per non riempire il disco
         docker image prune -f
