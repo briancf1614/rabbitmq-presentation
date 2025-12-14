@@ -39,13 +39,15 @@ namespace api_producer.Controllers
                         Prompt = request.Prompt,
                         Index = i,
                         Total = request.Quantity,
-                        AddExtraEffect = request.UseRabbit // (puoi anche ignorarlo qui)
                     };
 
                     var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(job));
+
+                    // publica il lavoro su RabbitMQ
                     await channel.BasicPublishAsync(exchange: exchangeName, routingKey: routingKey, body: body);
                 }
 
+                // Risposta immediata ad Angular    FIRE-AND-FORGET
                 return Ok(new ApiResponse
                 {
                     Message = "Richiesta presa in carico (RabbitMQ)!",
@@ -64,6 +66,7 @@ namespace api_producer.Controllers
         [HttpPost("generate-direct")]
         public async Task<IActionResult> GenerateDirect([FromBody] ImageGenerationRequest request)
         {
+            #region Api lenta che genera senza rabbitmq
             request.RequestId = Guid.NewGuid().ToString();
 
             var apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY") ?? "";
@@ -94,11 +97,13 @@ namespace api_producer.Controllers
                 Console.WriteLine($"[ERRORE] Direct: {ex.Message}");
                 return StatusCode(500, $"Errore generazione diretta: {ex.Message}");
             }
+            #endregion
         }
 
-        private static async Task GenerateAndSaveImageDirect(
-            string apiKey, string prompt, string requestId, int index, string folderPath)
+        private static async Task GenerateAndSaveImageDirect(string apiKey, string prompt, string requestId, int index, string folderPath)
         {
+            #region Lavoro pesante senza rabbitmq
+
             string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={apiKey}";
 
             var payload = new
@@ -131,6 +136,8 @@ namespace api_producer.Controllers
             byte[] imageBytes = Convert.FromBase64String(base64Data);
             var fullPath = Path.Combine(folderPath, $"{requestId}_{index}.jpg");
             await System.IO.File.WriteAllBytesAsync(fullPath, imageBytes);
+
+            #endregion
         }
     }
     #region DtoClasses
@@ -152,7 +159,6 @@ namespace api_producer.Controllers
         public string Prompt { get; set; } = "";
         public int Index { get; set; }
         public int Total { get; set; }
-        public bool AddExtraEffect { get; set; }
     }
 
     public class ApiResponse

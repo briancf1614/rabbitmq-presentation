@@ -28,40 +28,37 @@ namespace worker_consumer
                     await channel.QueueDeclareAsync(queue: queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
                     await channel.QueueBindAsync(queueName, exchangeName, routingKey);
 
-                    // ✅ Reparte mejor los jobs entre workers
+                    // configurazione quanti lavori fa un worker?
                     await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
-
-                    _logger.LogInformation(" [*] Worker pronto. In attesa di job...");
 
                     var consumer = new AsyncEventingBasicConsumer(channel);
 
                     consumer.ReceivedAsync += async (model, ea) =>
                     {
+                        // il messaggio lo ricevo sempre in byte[]
                         var messageString = Encoding.UTF8.GetString(ea.Body.ToArray());
 
                         try
                         {
                             var job = JsonSerializer.Deserialize<ImageJob>(messageString);
 
-                            if (job == null)
-                                throw new Exception("Job null / JSON invalido");
-
-                            _logger.LogInformation($"📩 Job: {job.RequestId} img {job.Index + 1}/{job.Total}");
-
+                            // Lavoro pesante e lento: generazione immagine
                             await GenerateAndSaveImage(job.Prompt, job.Index, job.RequestId);
 
-                            // ✅ ACK solo si terminó bien
+                            // ✅ ACK solo se e andato a finire bene
                             await channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError($"❌ Errore job: {ex.Message}");
 
-                            // Para demo: reintenta (requeue: true)
+                            // riprova il job fallito in caso che fallisca per crash
+                            // perche? se lo fa in teoria rabbit?
                             await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: true);
                         }
                     };
 
+                    // serve per attivare il consumer in RabbitMQ -> switch on
                     await channel.BasicConsumeAsync(queue: queueName, autoAck: false, consumer: consumer);
 
                     // Mantiene el worker vivo
@@ -77,6 +74,7 @@ namespace worker_consumer
 
         private async Task GenerateAndSaveImage(string prompt, int index, string requestId)
         {
+            #region Logica complessa e lenta per generazione immagine
             string folderPath = "/app/generated-images";
             string fileName = $"{requestId}_{index}.jpg";
             string fullPath = Path.Combine(folderPath, fileName);
@@ -135,8 +133,11 @@ namespace worker_consumer
                 _logger.LogError($"❌ Errore generazione: {ex.Message}");
                 throw; // 👈 importante: para que el Nack ocurra arriba
             }
+
+            #endregion
         }
 
+        #region Dto del worker
         // ✅ DTO del job (debe coincidir con el producer)
         public class ImageJob
         {
@@ -146,5 +147,6 @@ namespace worker_consumer
             public int Total { get; set; }
             public bool AddExtraEffect { get; set; }
         }
+        #endregion
     }
 }
