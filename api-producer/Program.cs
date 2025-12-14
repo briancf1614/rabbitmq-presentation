@@ -25,16 +25,18 @@ if (!Directory.Exists(imagesPath)) Directory.CreateDirectory(imagesPath);
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(imagesPath),
-    RequestPath = "/images"
+    RequestPath = "/images",
+
+    // --- AGGIUNGI QUESTO BLOCCO: LA SOLUZIONE "NUCLEARE" ---
+    // Questo forza l'inserimento dell'intestazione CORS su ogni singola immagine servita
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    }
+    // -------------------------------------------------------
 });
-
-Console.WriteLine($"[INFO] Servendo immagini da: {imagesPath}");
-
-app.UseCors(policy => policy
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader());
-
 // Configure the HTTP request pipeline.
 
 app.UseSwagger();
