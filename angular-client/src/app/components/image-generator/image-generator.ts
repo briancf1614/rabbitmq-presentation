@@ -34,7 +34,7 @@ private imageService = inject(ImageGeneratorService);
   
   const requestData: ImageRequest = {
     prompt: this.promptText(),
-    quantity: 1,
+    quantity: this.quantity(),
     addExtraEffect: this.addExtraEffect()
   };
 
@@ -50,15 +50,16 @@ private imageService = inject(ImageGeneratorService);
     const apiRequestId = res.requestId; 
 
     if (!apiRequestId) {
-      console.error('¡La API no devolvió un ID!');
-      this.responseMessage.set('Error: ID no recibido.');
+      this.hasError.set(true);
+      this.responseMessage.set('Error: ID non ricevuto.');
+      this.isLoading.set(false);
       return;
     }
 
     this.responseMessage.set(`Procesando ID: ${apiRequestId}...`);
 
     // 3. Pasamos ese ID a la función de espera
-    this.waitForImage(apiRequestId); 
+    this.waitForImages(apiRequestId); 
   },
     error: (err) => {
       this.hasError.set(true);
@@ -68,43 +69,43 @@ private imageService = inject(ImageGeneratorService);
   });
 }
 
-  waitForImage(id: string) {
-  const checkUrl = `${this.imageService.getImageBaseUrl()}/${id}_0.jpg`;
-  
-  let tentativi = 0;
-  const maxTentativi = 30;
+  waitForImages(id: string) {
+  const base = this.imageService.getImageBaseUrl();
+  const qty = this.quantity();
+  let attempts = 0;
+  const maxAttempts = 30;
 
-  const interval = setInterval(() => {
-    tentativi++;
+  const urls = Array.from({ length: qty }, (_, i) => `${base}/${id}_${i}.jpg`);
 
-    // Usamos checkUrl para preguntar
-    fetch(checkUrl, { method: 'HEAD' }) 
-            .then(res => {
-                if (res.ok) {
-                    // CASO 1: TROVATA!
-                    clearInterval(interval);
-                    
-                    // --- IL TRUCCO ANTI-CACHÉ ---
-                    const finalUrl = `${checkUrl}?t=${new Date().getTime()}`;
-                    
-                    // --- NUOVA LOGICA: AGGIUNGI ALLA LISTA ---
-                    // Aggiorniamo il signal aggiungendo il nuovo URL all'inizio della lista (più recente sopra)
-                    this.generatedImages.update(list => [finalUrl, ...list]);
-                    // ----------------------------------------
-                    
-                    this.isLoading.set(false);
-                    this.responseMessage.set('✨ Immagine pronta e aggiunta alla galleria!');
-                }
-            })
-      .catch(() => { /* Aspettando... */ });
+  const interval = setInterval(async () => {
+    attempts++;
 
-    if (tentativi >= maxTentativi) {
-       clearInterval(interval);
-       this.isLoading.set(false);
-       this.hasError.set(true);
-       this.responseMessage.set('Timeout: Tarda troppo.');
+    try {
+      const results = await Promise.all(
+        urls.map(u => fetch(u, { method: 'HEAD', cache: 'no-store' }).then(r => r.ok))
+      );
+
+      const allReady = results.every(Boolean);
+      if (allReady) {
+        clearInterval(interval);
+
+        const ts = Date.now();
+        const finalUrls = urls.map(u => `${u}?t=${ts}`);
+
+        this.generatedImages.update(list => [...finalUrls.reverse(), ...list]);
+        this.isLoading.set(false);
+        this.responseMessage.set('✨ Immagini pronte e aggiunte alla galleria!');
+      }
+    } catch {
+      // continuo a tentare
     }
 
+    if (attempts >= maxAttempts) {
+      clearInterval(interval);
+      this.isLoading.set(false);
+      this.hasError.set(true);
+      this.responseMessage.set('Timeout: tarda troppo.');
+    }
   }, 2000);
 }
 }

@@ -1,8 +1,8 @@
-<article class="card" [class]="data().status">
+<article [ngClass]="['card', data().status]">
   
   @if (data().imageUrl; as url) {
     <figure class="card-image">
-      <img [src]="url" alt="data().title">
+      <img [src]="url" [alt]="data().title">
     </figure>
   }
 
