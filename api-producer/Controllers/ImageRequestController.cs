@@ -53,7 +53,7 @@ namespace api_producer.Controllers
                 {
                     message = "Richiesta presa in carico!",
                     details = $"Generazione di {request.Quantity} immagini avviata.",
-                    requestId = request
+                    requestId = request.RequestId,
                 });
             }
             catch (Exception ex)
