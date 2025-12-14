@@ -11,26 +11,25 @@ import { ImageGeneratorService } from '../../services/image-generator-service';
   styleUrl: './image-generator.scss',
 })
 export class ImageGenerator {
-private imageService = inject(ImageGeneratorService);
-// --- INPUT SIGNALS ---
-  promptText = signal(''); 
-  quantity = signal<number>(1);         
+  private imageService = inject(ImageGeneratorService);
+
+  promptText = signal('');
+  quantity = signal<number>(1);
   useRabbit = signal<boolean>(true);
 
-
-  // --- STATE SIGNALS ---
-  // CORREZIONE: Aggiunto generatedImageUrl
   generatedImages = signal<string[]>([]);
-  isLoading = signal(false);
+  isSubmitting = signal(false);        // 👈 nuovo: blocca solo l’invio
   responseMessage = signal<string | null>(null);
   hasError = signal(false);
 
   generateImage() {
-    if (!this.promptText() || this.isLoading()) return;
+    if (!this.promptText() || this.isSubmitting()) return;
 
-    this.isLoading.set(true);
+    this.isSubmitting.set(true);
     this.hasError.set(false);
-    this.generatedImages.set([]); // opzionale: pulisci gallery a ogni run
+
+    // ❌ NON pulire la gallery, sennò ogni richiesta cancella le precedenti
+    // this.generatedImages.set([]);
 
     const requestData: ImageRequest = {
       prompt: this.promptText(),
@@ -40,7 +39,7 @@ private imageService = inject(ImageGeneratorService);
 
     const start = performance.now();
     this.responseMessage.set(this.useRabbit()
-      ? 'Invio job a RabbitMQ...'
+      ? 'Invio job a RabbitMQ... (puoi inviare altre richieste)'
       : 'Generazione diretta (senza RabbitMQ)...');
 
     const call$ = this.useRabbit()
@@ -54,17 +53,21 @@ private imageService = inject(ImageGeneratorService);
         if (!apiRequestId) {
           this.hasError.set(true);
           this.responseMessage.set('Errore: ID non ricevuto.');
-          this.isLoading.set(false);
+          this.isSubmitting.set(false);
           return;
         }
 
-        this.responseMessage.set(`RequestId: ${apiRequestId} — attendo immagini...`);
+        // ✅ QUI: sblocca subito la UI se Rabbit è ON
+        // (anche in direct puoi sbloccare, ma lì di solito vuoi evitare spam)
+        this.isSubmitting.set(false);
+
+        this.responseMessage.set(`RequestId: ${apiRequestId} — sto scaricando le immagini...`);
         this.waitForImages(apiRequestId, start);
       },
       error: () => {
         this.hasError.set(true);
         this.responseMessage.set('❌ Errore: backend non raggiungibile.');
-        this.isLoading.set(false);
+        this.isSubmitting.set(false);
       }
     });
   }
@@ -72,12 +75,11 @@ private imageService = inject(ImageGeneratorService);
   waitForImages(id: string, startTime: number) {
     const base = this.imageService.getImageBaseUrl();
     const qty = this.quantity();
-
     const urls = Array.from({ length: qty }, (_, i) => `${base}/${id}_${i}.jpg`);
     const seen = new Set<number>();
 
     let attempts = 0;
-    const maxAttempts = 80; // per demo con 10 immagini meglio più alto
+    const maxAttempts = 80;
 
     const checkImage = (url: string) =>
       new Promise<boolean>((resolve) => {
@@ -97,15 +99,13 @@ private imageService = inject(ImageGeneratorService);
           seen.add(i);
           const finalUrl = `${urls[i]}?t=${Date.now()}`;
           this.generatedImages.update(list => [finalUrl, ...list]);
-          this.responseMessage.set(`✨ Pronta: ${seen.size}/${qty}`);
+          this.responseMessage.set(`✨ Pronta: ${seen.size}/${qty} (RequestId: ${id})`);
         }
       });
 
       if (seen.size === qty) {
         clearInterval(interval);
-        this.isLoading.set(false);
         this.hasError.set(false);
-
         const seconds = ((performance.now() - startTime) / 1000).toFixed(1);
         this.responseMessage.set(`✅ Completato in ${seconds}s (RabbitMQ: ${this.useRabbit() ? 'ON' : 'OFF'})`);
         return;
@@ -113,9 +113,8 @@ private imageService = inject(ImageGeneratorService);
 
       if (attempts >= maxAttempts) {
         clearInterval(interval);
-        this.isLoading.set(false);
         this.hasError.set(true);
-        this.responseMessage.set(`Timeout: pronte ${seen.size}/${qty}.`);
+        this.responseMessage.set(`Timeout: pronte ${seen.size}/${qty}. (RequestId: ${id})`);
       }
     }, 1200);
   }
