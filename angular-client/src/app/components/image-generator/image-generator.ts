@@ -72,32 +72,44 @@ private imageService = inject(ImageGeneratorService);
   waitForImages(id: string) {
   const base = this.imageService.getImageBaseUrl();
   const qty = this.quantity();
+
+  // urls esperadas: /images/{id}_0.jpg, /images/{id}_1.jpg ...
+  const urls = Array.from({ length: qty }, (_, i) => `${base}/${id}_${i}.jpg`);
+
   let attempts = 0;
   const maxAttempts = 30;
 
-  const urls = Array.from({ length: qty }, (_, i) => `${base}/${id}_${i}.jpg`);
+  const checkImage = (url: string) =>
+    new Promise<boolean>((resolve) => {
+      const img = new Image();
+
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+
+      // anti-cache para que no te devuelva una versión vieja / 404 cacheada
+      img.src = `${url}?t=${Date.now()}`;
+    });
 
   const interval = setInterval(async () => {
     attempts++;
 
-    try {
-      const results = await Promise.all(
-        urls.map(u => fetch(u, { method: 'HEAD', cache: 'no-store' }).then(r => r.ok))
-      );
+    // comprobamos todas las imágenes en paralelo
+    const results = await Promise.all(urls.map(checkImage));
+    const allReady = results.every(Boolean);
 
-      const allReady = results.every(Boolean);
-      if (allReady) {
-        clearInterval(interval);
+    if (allReady) {
+      clearInterval(interval);
 
-        const ts = Date.now();
-        const finalUrls = urls.map(u => `${u}?t=${ts}`);
+      const ts = Date.now();
+      const finalUrls = urls.map(u => `${u}?t=${ts}`);
 
-        this.generatedImages.update(list => [...finalUrls.reverse(), ...list]);
-        this.isLoading.set(false);
-        this.responseMessage.set('✨ Immagini pronte e aggiunte alla galleria!');
-      }
-    } catch {
-      // continuo a tentare
+      // agrega todas al inicio (la más reciente arriba)
+      this.generatedImages.update(list => [...finalUrls.reverse(), ...list]);
+
+      this.isLoading.set(false);
+      this.hasError.set(false);
+      this.responseMessage.set('✨ Immagini pronte e aggiunte alla galleria!');
+      return;
     }
 
     if (attempts >= maxAttempts) {
