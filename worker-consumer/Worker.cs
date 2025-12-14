@@ -20,59 +20,51 @@ namespace worker_consumer
                     await using var connection = await factory.CreateConnectionAsync();
                     await using var channel = await connection.CreateChannelAsync();
 
-                    // --- TOPOLOGIA (Deve essere identica all'API) ---
                     const string exchangeName = "image_requests_exchange";
                     const string queueName = "image_requests_queue";
                     const string routingKey = "image_request";
 
-                    await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct);
+                    await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct, durable: false, autoDelete: false);
                     await channel.QueueDeclareAsync(queue: queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
                     await channel.QueueBindAsync(queueName, exchangeName, routingKey);
 
-                    _logger.LogInformation(" [*] In attesa di messaggi...");
+                    // ✅ Reparte mejor los jobs entre workers
+                    await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
+
+                    _logger.LogInformation(" [*] Worker pronto. In attesa di job...");
 
                     var consumer = new AsyncEventingBasicConsumer(channel);
 
                     consumer.ReceivedAsync += async (model, ea) =>
                     {
-                        byte[] body = ea.Body.ToArray();
-                        var messageString = Encoding.UTF8.GetString(body);
+                        var messageString = Encoding.UTF8.GetString(ea.Body.ToArray());
 
                         try
                         {
-                            // 1. DESERIALIZZIAMO IL JSON
-                            var request = JsonSerializer.Deserialize<ImageGenerationRequest>(messageString);
+                            var job = JsonSerializer.Deserialize<ImageJob>(messageString);
 
-                            if (request != null)
-                            {
-                                _logger.LogInformation($"Ricevuto ordine: {request.Prompt} (Quantità: {request.Quantity})");
+                            if (job == null)
+                                throw new Exception("Job null / JSON invalido");
 
-                                // 2. CICLO PER LA QUANTITÀ (Scaling interno)
-                                for (int i = 0; i < request.Quantity; i++)
-                                {
-                                    _logger.LogInformation($" -> Generazione immagine {i + 1} di {request.Quantity}...");
+                            _logger.LogInformation($"📩 Job: {job.RequestId} img {job.Index + 1}/{job.Total}");
 
-                                    // Chiamata a Google (o logica fake per test)
-                                    await GenerateAndSaveImage(request.Prompt, i, request.RequestId);
-                                }
+                            await GenerateAndSaveImage(job.Prompt, job.Index, job.RequestId);
 
-                                _logger.LogInformation(" [V] Ordine completato.");
-                            }
-
-                            // 3. INVIO ACK (Conferma che abbiamo finito)
+                            // ✅ ACK solo si terminó bien
                             await channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError($"Errore durante l'elaborazione: {ex.Message}");
-                            // In caso di errore grave, potresti fare un BasicNack per rimettere in coda
-                            // await channel.BasicNackAsync(ea.DeliveryTag, false, true); 
+                            _logger.LogError($"❌ Errore job: {ex.Message}");
+
+                            // Para demo: reintenta (requeue: true)
+                            await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: true);
                         }
                     };
 
-                    await channel.BasicConsumeAsync(queueName, autoAck: false, consumer: consumer);
+                    await channel.BasicConsumeAsync(queue: queueName, autoAck: false, consumer: consumer);
 
-                    // Mantiene il servizio attivo
+                    // Mantiene el worker vivo
                     await Task.Delay(Timeout.Infinite, stoppingToken);
                 }
                 catch (Exception ex)
@@ -80,8 +72,6 @@ namespace worker_consumer
                     _logger.LogError($"RabbitMQ non raggiungibile: {ex.Message}. Riprovo tra 5 sec...");
                     await Task.Delay(5000, stoppingToken);
                 }
-
-
             }
         }
 
@@ -91,9 +81,10 @@ namespace worker_consumer
             string fileName = $"{requestId}_{index}.jpg";
             string fullPath = Path.Combine(folderPath, fileName);
 
-            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
 
-            string apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+            string apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY") ?? "";
             if (string.IsNullOrEmpty(apiKey))
             {
                 _logger.LogError("Manca GOOGLE_API_KEY");
@@ -102,13 +93,10 @@ namespace worker_consumer
 
             try
             {
-                _logger.LogInformation($"🎨 Chiedo a Gemini 2.5 Flash: {prompt}");
+                _logger.LogInformation($"🎨 Gemini: {prompt} (index={index})");
 
-                // 1. URL DALLA TUA DOCUMENTAZIONE
                 string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={apiKey}";
 
-                // 2. PAYLOAD JSON (Come da documentazione CURL)
-                // Nota: "responseModalities": ["IMAGE"] è il trucco per avere le immagini!
                 var payload = new
                 {
                     contents = new[]
@@ -117,53 +105,45 @@ namespace worker_consumer
                     },
                     generationConfig = new
                     {
-                        responseModalities = new[] { "IMAGE" }, // <--- IMPORTANTE
+                        responseModalities = new[] { "IMAGE" },
                         imageConfig = new { aspectRatio = "1:1" }
                     }
                 };
 
-                string jsonPayload = JsonSerializer.Serialize(payload);
-                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-                using var client = new HttpClient();
-                var response = await client.PostAsync(url, content);
-                string responseString = await response.Content.ReadAsStringAsync();
+                // ✅ usa el HttpClient inyectado
+                var response = await _httpClient.PostAsync(url, content);
+                var responseString = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                {
                     throw new Exception($"Google Error ({response.StatusCode}): {responseString}");
-                }
 
-                // 3. PARSING DELLA RISPOSTA (Secondo la struttura Gemini)
-                // Cerca: candidates[0].content.parts[0].inlineData.data
                 var jsonNode = JsonNode.Parse(responseString);
-
-                // Navighiamo nel JSON in modo sicuro
                 var base64Data = jsonNode?["candidates"]?[0]?["content"]?["parts"]?[0]?["inlineData"]?["data"]?.ToString();
 
-                if (!string.IsNullOrEmpty(base64Data))
-                {
-                    byte[] imageBytes = Convert.FromBase64String(base64Data);
-                    await File.WriteAllBytesAsync(fullPath, imageBytes);
-                    _logger.LogInformation($"✅ Immagine salvata: {fullPath}");
-                }
-                else
-                {
+                if (string.IsNullOrEmpty(base64Data))
                     throw new Exception("Nessun dato immagine trovato nel JSON.");
-                }
+
+                byte[] imageBytes = Convert.FromBase64String(base64Data);
+                await File.WriteAllBytesAsync(fullPath, imageBytes);
+
+                _logger.LogInformation($"✅ Salvata: {fullPath}");
             }
             catch (Exception ex)
             {
                 _logger.LogError($"❌ Errore generazione: {ex.Message}");
+                throw; // 👈 importante: para que el Nack ocurra arriba
             }
         }
 
-        // CLASSE DTO (Deve essere identica a quella dell'API)
-        public class ImageGenerationRequest
+        // ✅ DTO del job (debe coincidir con el producer)
+        public class ImageJob
         {
-            public string RequestId { get; set; } // <--- NUOVO CAMPO
-            public string Prompt { get; set; }
-            public int Quantity { get; set; } = 1;
+            public string RequestId { get; set; } = "";
+            public string Prompt { get; set; } = "";
+            public int Index { get; set; }
+            public int Total { get; set; }
             public bool AddExtraEffect { get; set; }
         }
     }
