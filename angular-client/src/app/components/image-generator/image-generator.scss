@@ -1,79 +1,68 @@
-.generator-card {
-  background: #fff;
-  padding: 2rem;
+/* Stili per la sezione Galleria */
+.results-area {
+  padding: 20px 0;
+  h3 {
+    margin-bottom: 15px;
+    font-size: 1.5em;
+    color: #333;
+  }
+}
+
+.gallery-grid {
+  display: grid;
+  // Griglia responsiva: le colonne si adattano e sono larghe almeno 250px
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+  gap: 20px;
+}
+
+.image-card {
+  background: white;
+  padding: 10px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-  
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #374151;
-  }
-
-  textarea, input[type="number"] {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-family: inherit;
-    
-    &:focus { outline: 2px solid #6366f1; border-color: transparent; }
-  }
-}
-
-.options-row {
-  display: flex;
-  gap: 1rem;
-  align-items: center; // Allinea verticalmente checkbox e input
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  margin-top: 1.5rem; // Per allinearlo col campo numero
-  
-  label {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: normal;
-  }
-  
-  input[type="checkbox"] {
-    width: 1.2rem;
-    height: 1.2rem;
-    cursor: pointer;
-  }
-}
-
-.btn-primary {
-  width: 100%;
-  padding: 1rem;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  
-  &:disabled { background-color: #a5a6f6; cursor: not-allowed; }
-  &:hover:not(:disabled) { background-color: #4338ca; }
-}
-
-.alert {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   text-align: center;
-  
-  &.success { background: #d1fae5; color: #065f46; }
-  &.error { background: #fee2e2; color: #991b1b; }
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    // Mantieni l'aspect ratio (molto importante per le immagini AI)
+    aspect-ratio: 1 / 1; 
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .download-link {
+    display: inline-block;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    border: 1px solid #007bff;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #007bff;
+      color: white;
+    }
+  }
+}
+
+/* Animazione di entrata per un look più fluido */
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Stili esistenti (di base) */
+.generator-card {
+  // Assicurati che il tuo form e i tuoi input siano stilati qui
+  // ... (i tuoi stili precedenti per form-group, btn-primary, alert, ecc.)
 }

@@ -66,11 +66,19 @@
     </div>
   }
 
-  @if (generatedImageUrl()) {
-    <div class="result-container">
-      <h3>Risultato:</h3>
-      <img [src]="generatedImageUrl()" alt="Immagine generata" class="generated-img">
-    </div>
-  }
-
 </section>
+
+@if (generatedImages().length > 0) {
+  <section class="results-area">
+    <h3>Tutte le Creazioni ({{ generatedImages().length }})</h3>
+    
+    <div class="gallery-grid">
+      @for (imgUrl of generatedImages(); track imgUrl) {
+        <div class="image-card fade-in">
+          <img [src]="imgUrl" alt="AI Generated Art">
+          <a [href]="imgUrl" target="_blank" class="download-link">Scarica</a>
+        </div>
+      }
+    </div>
+  </section>
+}

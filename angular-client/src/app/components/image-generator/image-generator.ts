@@ -19,7 +19,7 @@ private imageService = inject(ImageGeneratorService);
 
   // --- STATE SIGNALS ---
   // CORREZIONE: Aggiunto generatedImageUrl
-  generatedImageUrl = signal<string | null>(null);
+  generatedImages = signal<string[]>([]);
   isLoading = signal(false);
   responseMessage = signal<string | null>(null);
   hasError = signal(false);
@@ -28,10 +28,10 @@ private imageService = inject(ImageGeneratorService);
   if (!this.promptText() || this.isLoading()) return;
 
   // 1. STATO INIZIALE
-  this.isLoading.set(true);
-  this.generatedImageUrl.set(null); 
+  this.isLoading.set(true); 
   this.responseMessage.set('Invio messaggio a RabbitMQ...'); // Feedback immediato
-
+  this.hasError.set(false);
+  
   const requestData: ImageRequest = {
     prompt: this.promptText(),
     quantity: 1,
@@ -69,34 +69,42 @@ private imageService = inject(ImageGeneratorService);
 }
 
   waitForImage(id: string) {
-  const url = `${this.imageService.getImageBaseUrl()}/${id}_0.jpg`;
+  const checkUrl = `${this.imageService.getImageBaseUrl()}/${id}_0.jpg`;
   
-  let tentativi = 0; // Contatore
-  const maxTentativi = 30; // 30 tentativi * 2 sec = 60 secondi massimo
+  let tentativi = 0;
+  const maxTentativi = 30;
 
   const interval = setInterval(() => {
-    tentativi++; // Aumentiamo il contatore
+    tentativi++;
 
-    fetch(url, { method: 'HEAD' })
-      .then(res => {
-        if (res.ok) {
-          // CASO 1: TROVATA!
-          clearInterval(interval); // Stop
-          this.generatedImageUrl.set(url); // Mostra foto
-          this.isLoading.set(false); // Sblocca tasti
-          this.responseMessage.set('Fatto! Ecco la tua immagine.');
-        }
-      })
-      .catch(() => { /* Errore di rete, ignoriamo e riproviamo */ });
+    // Usamos checkUrl para preguntar
+    fetch(checkUrl, { method: 'HEAD' }) 
+            .then(res => {
+                if (res.ok) {
+                    // CASO 1: TROVATA!
+                    clearInterval(interval);
+                    
+                    // --- IL TRUCCO ANTI-CACHÉ ---
+                    const finalUrl = `${checkUrl}?t=${new Date().getTime()}`;
+                    
+                    // --- NUOVA LOGICA: AGGIUNGI ALLA LISTA ---
+                    // Aggiorniamo il signal aggiungendo il nuovo URL all'inizio della lista (più recente sopra)
+                    this.generatedImages.update(list => [finalUrl, ...list]);
+                    // ----------------------------------------
+                    
+                    this.isLoading.set(false);
+                    this.responseMessage.set('✨ Immagine pronta e aggiunta alla galleria!');
+                }
+            })
+      .catch(() => { /* Aspettando... */ });
 
-    // CASO 2: TROPPO TEMPO (TIMEOUT)
     if (tentativi >= maxTentativi) {
-       clearInterval(interval); // Stop forzato
+       clearInterval(interval);
        this.isLoading.set(false);
        this.hasError.set(true);
-       this.responseMessage.set('Timeout: Il worker ci sta mettendo troppo (o si è bloccato).');
+       this.responseMessage.set('Timeout: Tarda troppo.');
     }
 
-  }, 2000); // Ogni 2 secondi
+  }, 2000);
 }
 }
