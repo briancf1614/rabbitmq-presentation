@@ -48,11 +48,11 @@ Il sistema è composto da tre parti distinte:
 ## 🚀 Come Avviare il Progetto
 
 ### Prerequisiti
-* [.NET 8 SDK](https://dotnet.microsoft.com/download)
+* [.NET 10 SDK](https://dotnet.microsoft.com/download)
 * [Docker](https://www.docker.com/) (per RabbitMQ)
 * Una API Key di Google Gemini (variabile d'ambiente: `GOOGLE_API_KEY`)
 
 ### 1. Avvia RabbitMQ
 Esegui il container RabbitMQ con l'interfaccia di gestione:
 ```bash
-docker run -d --hostnamemy-rabbit --name some-rabbit -p 15672:15672 -p 5672:5672 rabbitmq:3-management
+docker run -d --hostnamemy-rabbit --name some-rabbit -p 15672:15672 -p 5672:5672 rabbitmq:4-management
