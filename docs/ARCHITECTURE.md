@@ -43,3 +43,29 @@ The system is fully containerized using Docker.
 - **Frontend Web**: Angular 17+ (Standalone, SCSS)
 - **Frontend Mobile**: Android (Kotlin, Gradle)
 - **DevOps**: Docker, Docker Compose, Kubernetes
+
+## 🌟 Advanced Enterprise Patterns Addendum
+
+### Transactional Outbox Pattern
+To solve the dual-write problem (writing to a database and publishing an event to a message broker simultaneously), the `OrderService` implements the **Transactional Outbox** pattern using MassTransit's Entity Framework integration.
+- When an order is created, the order data and the event (`OrderCreatedEvent`) are saved in the same PostgreSQL transaction.
+- If the database transaction fails, neither is saved.
+- If it succeeds, a background process reliably publishes the event to RabbitMQ, ensuring at-least-once delivery even in case of broker downtime.
+
+### Domain-Driven Design (DDD)
+The domain layer employs strong encapsulation:
+- **Private Setters**: Entities like `Order` control their own state to prevent anemic domain models.
+- **Constructors and Factories**: Objects are always created in a valid state.
+- **Encapsulated Collections**: `Order` exposes `Items` as an `IReadOnlyCollection`, forcing modifications through behavior methods like `AddItem()` which also enforces business rules (recalculating totals).
+
+### Resiliency and Cross-Cutting Concerns
+- **Global Exception Handling**: A centralized middleware intercepts all unhandled exceptions, formatting them into standardized JSON error responses to prevent stack trace leaks.
+- **CQRS Validation**: MediatR Pipeline Behaviors integrate with `FluentValidation` to validate commands (like `CreateOrderCommand`) *before* they reach the domain logic, failing fast.
+- **Structured Logging**: `Serilog` is configured to replace the default logger, writing structured logs that can be ingested by observability tools like ELK or Seq.
+
+### Frontend Enterprise Patterns
+- **Angular (Web)**: Uses **NgRx** (Redux pattern) for state management. This separates UI components from side effects (API calls), providing a predictable, unidirectional data flow via Actions, Reducers, and Effects.
+- **Android (Mobile)**: Uses the **MVVM** (Model-View-ViewModel) pattern with Jetpack Compose. `ViewModel` manages the state (using Kotlin `StateFlow`), surviving configuration changes and keeping the UI layer purely declarative.
+
+### Distributed Caching
+- **Redis**: The `InventoryService` utilizes Redis (`IDistributedCache`) to cache frequently accessed data (e.g., inventory stock levels), reducing load on the primary MongoDB database.

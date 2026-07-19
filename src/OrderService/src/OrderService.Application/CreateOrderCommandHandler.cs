@@ -20,13 +20,13 @@ namespace OrderService.Application
 
         public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
         {
-            var order = new Order
+            var order = new Order(request.CustomerName);
+
+            // Dummy product for demo purposes based on TotalAmount provided
+            if (request.TotalAmount > 0)
             {
-                Id = Guid.NewGuid(),
-                CustomerName = request.CustomerName,
-                TotalAmount = request.TotalAmount,
-                Status = "Created"
-            };
+                 order.AddItem("Default Service Item", request.TotalAmount, 1);
+            }
 
             await _repository.AddAsync(order, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
