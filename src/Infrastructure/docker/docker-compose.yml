@@ -30,6 +30,13 @@ services:
     networks:
       - enterprise-network
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - enterprise-network
+
   orderservice:
     build:
       context: ../../OrderService
@@ -50,9 +57,11 @@ services:
     environment:
       - MongoDb__ConnectionString=mongodb://admin:password@mongodb:27017
       - RabbitMQ__Host=rabbitmq
+      - Redis__ConnectionString=redis:6379
     depends_on:
       - mongodb
       - rabbitmq
+      - redis
     networks:
       - enterprise-network
 

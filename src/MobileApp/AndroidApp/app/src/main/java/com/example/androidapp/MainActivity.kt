@@ -8,12 +8,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.net.URL
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.androidapp.viewmodel.OrderUiState
+import com.example.androidapp.viewmodel.OrderViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,14 +30,14 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderScreen() {
+fun OrderScreen(viewModel: OrderViewModel = viewModel()) {
     var customerName by remember { mutableStateOf("") }
     var totalAmount by remember { mutableStateOf("") }
-    var statusMessage by remember { mutableStateOf("") }
-    val coroutineScope = rememberCoroutineScope()
+
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Enterprise Dashboard", style = MaterialTheme.typography.headlineMedium)
+        Text(text = "Enterprise Dashboard (MVVM)", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -60,48 +57,19 @@ fun OrderScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = {
-                coroutineScope.launch {
-                    statusMessage = "Sending..."
-                    try {
-                        val response = withContext(Dispatchers.IO) {
-                            sendOrderRequest(customerName, totalAmount.toDoubleOrNull() ?: 0.0)
-                        }
-                        statusMessage = "Success: $response"
-                    } catch (e: Exception) {
-                        statusMessage = "Error: ${e.message}"
-                    }
-                }
-            },
+            onClick = { viewModel.submitOrder(customerName, totalAmount) },
+            enabled = uiState !is OrderUiState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Place Order")
+            Text(if (uiState is OrderUiState.Loading) "Submitting..." else "Place Order")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = statusMessage)
-    }
-}
 
-fun sendOrderRequest(name: String, amount: Double): String {
-    // 10.0.2.2 is standard for Android Emulator to host localhost
-    val url = URL("http://10.0.2.2:5000/api/orders")
-    val conn = url.openConnection() as HttpURLConnection
-    conn.requestMethod = "POST"
-    conn.setRequestProperty("Content-Type", "application/json; utf-8")
-    conn.setRequestProperty("Accept", "application/json")
-    conn.doOutput = true
-
-    val jsonInputString = "{\"customerName\": \"$name\", \"totalAmount\": $amount}"
-
-    OutputStreamWriter(conn.outputStream).use { os ->
-        os.write(jsonInputString)
-        os.flush()
-    }
-
-    if (conn.responseCode in 200..299) {
-        return conn.inputStream.bufferedReader().use { it.readText() }
-    } else {
-        throw Exception("Failed with HTTP code: ${conn.responseCode}")
+        when (uiState) {
+            is OrderUiState.Success -> Text(text = (uiState as OrderUiState.Success).message, color = MaterialTheme.colorScheme.primary)
+            is OrderUiState.Error -> Text(text = (uiState as OrderUiState.Error).error, color = MaterialTheme.colorScheme.error)
+            else -> {}
+        }
     }
 }
