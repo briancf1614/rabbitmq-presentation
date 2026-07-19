@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - enterprise-network
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orderdb
+    ports:
+      - "5432:5432"
+    networks:
+      - enterprise-network
+
+  mongodb:
+    image: mongo:6
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    networks:
+      - enterprise-network
+
+  orderservice:
+    build:
+      context: ../../OrderService
+      dockerfile: src/OrderService.Api/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=orderdb;Username=admin;Password=password
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - enterprise-network
+
+  inventoryservice:
+    build:
+      context: ../../InventoryService
+      dockerfile: src/InventoryService.Api/Dockerfile
+    environment:
+      - MongoDb__ConnectionString=mongodb://admin:password@mongodb:27017
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - enterprise-network
+
+  apigateway:
+    build:
+      context: ../../ApiGateway
+      dockerfile: src/ApiGateway/Dockerfile
+    ports:
+      - "5000:80"
+    depends_on:
+      - orderservice
+      - inventoryservice
+    networks:
+      - enterprise-network
+
+networks:
+  enterprise-network:
+    driver: bridge
