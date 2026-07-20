@@ -69,3 +69,16 @@ The domain layer employs strong encapsulation:
 
 ### Distributed Caching
 - **Redis**: The `InventoryService` utilizes Redis (`IDistributedCache`) to cache frequently accessed data (e.g., inventory stock levels), reducing load on the primary MongoDB database.
+
+## 🔐 Advanced Security (JWT & API Gateway)
+The platform implements an **IdentityService** to authenticate users and generate JWT Bearer tokens.
+The **YARP API Gateway** acts as the centralized enforcement point, decrypting and validating tokens before routing traffic to the internal microservices, hiding backend security complexities from external clients.
+
+## 🩺 Observability & Health Checks
+A true enterprise system requires monitoring:
+- **Health Checks (`/health`)**: Built-in ASP.NET Core health checks monitor the vital signs of dependencies (PostgreSQL, MongoDB, RabbitMQ). Orchestrators like Kubernetes use these to restart failing pods.
+- **OpenTelemetry**: Stubs are included for distributed tracing, allowing observability tools (like Jaeger/Zipkin) to track requests across the API Gateway, Order Service, Message Broker, and Inventory Service.
+
+## 🎓 The Educational "Bible" Aspect
+To maximize learning value, key files across the entire stack (Backend, Frontend, Mobile) are heavily commented with blocks labeled `// EDU:`.
+These comments explicitly explain the *WHY* and the *HOW* of the enterprise patterns implemented, serving as an interactive textbook for junior developers.
