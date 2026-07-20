@@ -1,3 +1,12 @@
+// ============================================================================
+// EDU: ANDROID MVVM (Model-View-ViewModel)
+// ============================================================================
+// The ViewModel manages UI-related data in a lifecycle-conscious way.
+// It survives configuration changes (like screen rotations).
+// StateFlow provides a reactive stream of state that Jetpack Compose can observe,
+// ensuring the UI always reflects the current data (Unidirectional Data Flow).
+// ============================================================================
+
 package com.example.androidapp.viewmodel
 
 import androidx.lifecycle.ViewModel

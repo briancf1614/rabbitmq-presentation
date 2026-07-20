@@ -7,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+// Add HealthChecks\nbuilder.Services.AddHealthChecks()\n    .AddMongoDb(builder.Configuration["MongoDb:ConnectionString"] ?? "mongodb://localhost:27017")\n    .AddRabbitMQ(rabbitConnectionString: $"amqp://guest:guest@{builder.Configuration["RabbitMQ:Host"] ?? "localhost"}:5672");\n\n// OpenTelemetry Setup\nbuilder.Services.AddOpenTelemetry()\n    .WithTracing(tracerProviderBuilder =>\n    {\n        tracerProviderBuilder\n            .AddSource("InventoryService")\n            .AddAspNetCoreInstrumentation();\n    });
+
 // Redis setup
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -37,6 +39,7 @@ builder.Services.AddMassTransit(x =>
 var app = builder.Build();
 
 app.UseAuthorization();
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 // Simple endpoint to test Redis cache

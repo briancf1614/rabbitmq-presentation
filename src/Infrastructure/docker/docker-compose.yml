@@ -80,3 +80,11 @@ services:
 networks:
   enterprise-network:
     driver: bridge
+  identityservice:
+    build:
+      context: ../../IdentityService
+      dockerfile: src/IdentityService.Api/Dockerfile
+    ports:
+      - "5001:80"
+    networks:
+      - enterprise-network
