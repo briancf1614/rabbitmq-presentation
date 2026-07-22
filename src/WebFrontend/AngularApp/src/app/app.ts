@@ -11,7 +11,7 @@ import { submitOrder } from './store/order.actions';
   imports: [CommonModule, FormsModule],
   template: `
     <div style="padding: 20px; font-family: Arial, sans-serif;">
-      <h1>Enterprise Dashboard (NgRx)</h1>
+      <h1>Enterprise Dashboard (NgRx & SignalR)</h1>
 
       <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
         <h2>Create New Order</h2>
