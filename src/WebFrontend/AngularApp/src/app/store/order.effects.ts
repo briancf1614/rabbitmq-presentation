@@ -1,12 +1,3 @@
-// ============================================================================
-// EDU: NGRX STORE - EFFECTS
-// ============================================================================
-// Effects handle side-effects in NgRx, isolating them from components.
-// When an Action is dispatched (e.g., submitOrder), the Effect catches it,
-// makes the HTTP request, and returns a new Success or Failure Action.
-// This keeps Components pure and Reducers synchronous.
-// ============================================================================
-
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { HttpClient } from '@angular/common/http';
