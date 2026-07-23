@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using ApiGateway;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddVaultStub();
 
 // Configure JWT Authentication
-var key = Encoding.ASCII.GetBytes("SuperSecretKeyThatNeedsToBeLongEnoughForHS256");
+var key = Encoding.ASCII.GetBytes(builder.Configuration["JwtSecretFromVault"] ?? "Fallback");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

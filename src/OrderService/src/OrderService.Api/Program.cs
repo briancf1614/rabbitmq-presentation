@@ -20,6 +20,8 @@ builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
+// EDU: API VERSIONING\nbuilder.Services.AddApiVersioning(options =>\n{\n    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);\n    options.AssumeDefaultVersionWhenUnspecified = true;\n    options.ReportApiVersions = true;\n    options.ApiVersionReader = Asp.Versioning.ApiVersionReader.Combine(\n        new Asp.Versioning.UrlSegmentApiVersionReader(),\n        new Asp.Versioning.HeaderApiVersionReader("X-Api-Version")\n    );\n}).AddMvc().AddApiExplorer(options =>\n{\n    options.GroupNameFormat = "'v'VVV";\n    options.SubstituteApiVersionInUrl = true;\n});
+
 // Add HealthChecks\nbuilder.Services.AddHealthChecks()\n    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection"))\n    .AddRabbitMQ(rabbitConnectionString: $"amqp://guest:guest@{builder.Configuration["RabbitMQ:Host"] ?? "localhost"}:5672");\n\n// OpenTelemetry Setup\nbuilder.Services.AddOpenTelemetry()\n    .WithTracing(tracerProviderBuilder =>\n    {\n        tracerProviderBuilder\n            .AddSource("OrderService")\n            .AddAspNetCoreInstrumentation()\n            .AddHttpClientInstrumentation();\n    });
 
 // Configure JWT Authentication
@@ -40,6 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ICatalogGrpcClient, CatalogGrpcClient>();
 
 // Database setup
 builder.Services.AddDbContext<OrderDbContext>(options =>

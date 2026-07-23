@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "CatalogService.Api.Grpc";
+
+package catalog;
+
+// ============================================================================
+// EDU: gRPC COMMUNICATION
+// ============================================================================
+// Protocol Buffers (protobuf) define the interface for gRPC services.
+// gRPC is highly efficient (binary protocol, HTTP/2) making it ideal for
+// internal microservice-to-microservice communication where low latency is critical.
+// ============================================================================
+
+service CatalogGrpcService {
+  rpc ValidateProduct (ValidateProductRequest) returns (ValidateProductResponse);
+}
+
+message ValidateProductRequest {
+  string product_id = 1;
+}
+
+message ValidateProductResponse {
+  bool is_valid = 1;
+  string product_name = 2;
+  double price = 3;
+}

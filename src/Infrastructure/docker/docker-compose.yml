@@ -88,3 +88,12 @@ networks:
       - "5001:80"
     networks:
       - enterprise-network
+
+  catalogservice:
+    build:
+      context: ../../CatalogService
+      dockerfile: src/CatalogService.Api/Dockerfile
+    ports:
+      - "5003:80"
+    networks:
+      - enterprise-network
