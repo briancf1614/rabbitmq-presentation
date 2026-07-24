@@ -1,4 +1,4 @@
-﻿namespace OrderService.UnitTests;
+﻿namespace OrderService.IntegrationTests;
 
 public class UnitTest1
 {

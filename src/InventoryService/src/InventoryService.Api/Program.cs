@@ -1,13 +1,35 @@
+using OpenTelemetry.Trace;
 using MassTransit;
 using InventoryService.Application;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text;
+using System;
+using StackExchange.Redis;
+using RedLockNet.SERedis;
+using RedLockNet.SERedis.Configuration;
+using System.Collections.Generic;
+using System.Net;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// Add HealthChecks\nbuilder.Services.AddHealthChecks()\n    .AddMongoDb(builder.Configuration["MongoDb:ConnectionString"] ?? "mongodb://localhost:27017")\n    .AddRabbitMQ(rabbitConnectionString: $"amqp://guest:guest@{builder.Configuration["RabbitMQ:Host"] ?? "localhost"}:5672");\n\n// OpenTelemetry Setup\nbuilder.Services.AddOpenTelemetry()\n    .WithTracing(tracerProviderBuilder =>\n    {\n        tracerProviderBuilder\n            .AddSource("InventoryService")\n            .AddAspNetCoreInstrumentation();\n    });
+// Add HealthChecks
+builder.Services.AddHealthChecks();
+
+
+
+// OpenTelemetry Setup
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracerProviderBuilder =>
+    {
+        tracerProviderBuilder
+            .AddSource("InventoryService")
+            .AddAspNetCoreInstrumentation();
+    });
 
 // Redis setup
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -15,6 +37,17 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
     options.InstanceName = "Inventory_";
 });
+
+// RedLock setup for Distributed Locking
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+// Use lazy connection so it doesn't block startup if Redis is down initially in docker-compose
+builder.Services.AddSingleton<RedLockNet.IDistributedLockFactory>(sp =>
+{
+    var multiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
+    var redLockMultiplexers = new List<RedLockMultiplexer> { new RedLockMultiplexer(multiplexer) };
+    return RedLockFactory.Create(redLockMultiplexers);
+});
+
 
 // RabbitMQ MassTransit setup
 builder.Services.AddMassTransit(x =>

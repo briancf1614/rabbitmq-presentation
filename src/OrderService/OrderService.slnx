@@ -6,6 +6,6 @@
     <Project Path="src/OrderService.Infrastructure/OrderService.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/OrderService.UnitTests/OrderService.UnitTests.csproj" />
+    <Project Path="tests/OrderService.IntegrationTests/OrderService.IntegrationTests.csproj" />
   </Folder>
 </Solution>
