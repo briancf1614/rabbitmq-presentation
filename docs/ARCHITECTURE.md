@@ -83,21 +83,18 @@ A true enterprise system requires monitoring:
 To maximize learning value, key files across the entire stack (Backend, Frontend, Mobile) are heavily commented with blocks labeled `// EDU:`.
 These comments explicitly explain the *WHY* and the *HOW* of the enterprise patterns implemented, serving as an interactive textbook for junior developers.
 
-## 🚀 The Final Enterprise Frontier
+## 🚀 Ultimate Enterprise Performance & Concurrency
 
-### GraphQL (Catalog Service)
-The `CatalogService` demonstrates how to use **GraphQL** (via HotChocolate) as an alternative to REST. It solves over-fetching and under-fetching by allowing clients to specify exactly the shape of the data they need from the product catalog.
+### Strict CQRS with Dapper
+In the `OrderService`, we separate Reads from Writes.
+While `Entity Framework Core` handles the complexity of inserting/updating Aggregates (Commands) and triggering domain events, we use **Dapper** (a micro-ORM) for lightning-fast read operations (Queries) using raw SQL, mapping directly to Data Transfer Objects (DTOs).
 
-### Synchronous gRPC Communication
-While the architecture heavily relies on asynchronous Event-Driven messaging, sometimes strict consistency is needed immediately. The `OrderService` uses a **gRPC Client** to synchronously call the `CatalogService` to validate product existence before creating an order. gRPC over HTTP/2 provides the lowest possible latency for internal microservice communication.
+### Advanced Domain-Driven Design (Domain Events)
+Aggregates in our Domain layer (e.g., `Order`) now record internal `DomainEvents`.
+We intercept `SaveChangesAsync` in our DbContext to automatically dispatch these events via `MediatR` *before* the transaction commits. This allows decoupled side-effects (like logging, or updating an aggregate's totals) within the *same* database transaction boundary, distinguishing them from Integration Events which are sent to RabbitMQ.
 
-### REST Level 3: HATEOAS & API Versioning
-The REST endpoints in `OrderService` demonstrate high maturity:
-- **API Versioning**: Endpoints are explicitly versioned (`/api/v1/orders`), allowing breaking changes to be introduced in `v2` without disrupting existing clients.
-- **HATEOAS**: Responses return hypermedia links (`self`, `cancel`), allowing client applications to dynamically navigate the API's state machine.
+### Concurrency Control (Distributed Locking via Redis)
+To solve race conditions in a highly scaled-out environment (where multiple instances of `InventoryService` might try to reserve the same product at the exact same millisecond), we implemented **Distributed Locking** using `RedLock.net` and `Redis`. This guarantees atomic operations across the entire cluster.
 
-### Secrets Management
-The `ApiGateway` demonstrates a stubbed integration with a Key Vault (e.g., Azure Key Vault). Secrets like the JWT signing key are not hardcoded but loaded dynamically into the configuration pipeline at startup.
-
-### Enterprise Testing
-An `OrderService.UnitTests` project demonstrates how to use `xUnit`, `Moq`, and `FluentAssertions` to isolate and test MediatR Command Handlers, ensuring the core business logic is heavily verified independently of the infrastructure.
+### End-to-End Integration Testing (Testcontainers)
+The repository now includes `OrderService.IntegrationTests`. Instead of mocking out the database or the message broker, these tests use **Testcontainers** to spin up actual, ephemeral Docker containers (PostgreSQL and RabbitMQ) during test execution, ensuring absolute confidence in the system's integration points.
