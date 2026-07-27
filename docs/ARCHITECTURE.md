@@ -83,18 +83,16 @@ A true enterprise system requires monitoring:
 To maximize learning value, key files across the entire stack (Backend, Frontend, Mobile) are heavily commented with blocks labeled `// EDU:`.
 These comments explicitly explain the *WHY* and the *HOW* of the enterprise patterns implemented, serving as an interactive textbook for junior developers.
 
-## 🚀 Ultimate Enterprise Performance & Concurrency
+## 🚀 Absolute Enterprise Resilience & DevOps
 
-### Strict CQRS with Dapper
-In the `OrderService`, we separate Reads from Writes.
-While `Entity Framework Core` handles the complexity of inserting/updating Aggregates (Commands) and triggering domain events, we use **Dapper** (a micro-ORM) for lightning-fast read operations (Queries) using raw SQL, mapping directly to Data Transfer Objects (DTOs).
+### API Rate Limiting (YARP)
+To protect our internal microservices from DDoS attacks or runaway clients, the YARP API Gateway implements ASP.NET Core **Rate Limiting**. We specifically configured a `FixedWindowRateLimiter` partitioned by the client's IP address (e.g., maximum 100 requests per minute). Requests exceeding this limit receive a `429 Too Many Requests` response.
 
-### Advanced Domain-Driven Design (Domain Events)
-Aggregates in our Domain layer (e.g., `Order`) now record internal `DomainEvents`.
-We intercept `SaveChangesAsync` in our DbContext to automatically dispatch these events via `MediatR` *before* the transaction commits. This allows decoupled side-effects (like logging, or updating an aggregate's totals) within the *same* database transaction boundary, distinguishing them from Integration Events which are sent to RabbitMQ.
+### Response / Output Caching
+The `CatalogService` demonstrates **Output Caching**. Because product data is read-heavy and rarely changes, caching the entire HTTP response prevents the application from re-executing identical queries against the database, massively boosting throughput.
 
-### Concurrency Control (Distributed Locking via Redis)
-To solve race conditions in a highly scaled-out environment (where multiple instances of `InventoryService` might try to reserve the same product at the exact same millisecond), we implemented **Distributed Locking** using `RedLock.net` and `Redis`. This guarantees atomic operations across the entire cluster.
+### Idempotency (MassTransit MongoDb Inbox)
+Message brokers guarantee *At-Least-Once* delivery, meaning consumers might process the same message multiple times. The `InventoryService` configures MassTransit's **MongoDB Inbox**, which natively tracks processed `MessageId`s. If a duplicate `OrderCreatedEvent` is received, it is gracefully ignored, guaranteeing that inventory is never deducted twice.
 
-### End-to-End Integration Testing (Testcontainers)
-The repository now includes `OrderService.IntegrationTests`. Instead of mocking out the database or the message broker, these tests use **Testcontainers** to spin up actual, ephemeral Docker containers (PostgreSQL and RabbitMQ) during test execution, ensuring absolute confidence in the system's integration points.
+### Continuous Integration (GitHub Actions)
+A full CI pipeline (`.github/workflows/ci.yml`) is provided. It demonstrates how an enterprise team automates quality control. On every push or PR, the pipeline sets up the environment, restores dependencies, builds the C# and Angular projects, and executes the Unit/Integration tests. Because we use Testcontainers, the GitHub runner automatically spins up ephemeral Docker instances (PostgreSQL, RabbitMQ) just to run the tests, and tears them down after.

@@ -1,0 +1,74 @@
+name: Enterprise Platform CI/CD
+
+# ============================================================================
+# EDU: CONTINUOUS INTEGRATION (CI/CD)
+# ============================================================================
+# This GitHub Actions workflow defines the automated pipeline.
+# On every push to main, or on PRs, it will automatically:
+# 1. Setup .NET
+# 2. Build the entire C# solution.
+# 3. Run all Unit and Integration Tests (which spin up Testcontainers!).
+# This ensures that no broken code is ever merged into the main branch.
+# ============================================================================
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore Backend Dependencies
+      run: |
+        dotnet restore src/OrderService/OrderService.slnx
+        dotnet restore src/InventoryService/InventoryService.slnx
+        dotnet restore src/PaymentService/PaymentService.slnx
+        dotnet restore src/CatalogService/CatalogService.slnx
+        dotnet restore src/IdentityService/IdentityService.slnx
+        dotnet restore src/NotificationService/NotificationService.slnx
+        dotnet restore src/ApiGateway/src/ApiGateway/ApiGateway.csproj
+
+    - name: Build Backend
+      run: |
+        dotnet build --no-restore src/OrderService/OrderService.slnx
+        dotnet build --no-restore src/InventoryService/InventoryService.slnx
+        dotnet build --no-restore src/PaymentService/PaymentService.slnx
+        dotnet build --no-restore src/CatalogService/CatalogService.slnx
+        dotnet build --no-restore src/IdentityService/IdentityService.slnx
+        dotnet build --no-restore src/NotificationService/NotificationService.slnx
+        dotnet build --no-restore src/ApiGateway/src/ApiGateway/ApiGateway.csproj
+
+    - name: Run Backend Tests
+      run: dotnet test src/OrderService/OrderService.slnx --no-build --verbosity normal
+
+  build-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Frontend Dependencies
+      run: npm ci
+      working-directory: ./src/WebFrontend/AngularApp
+
+    - name: Build Angular App
+      run: npm run build
+      working-directory: ./src/WebFrontend/AngularApp

@@ -1,16 +1,11 @@
-using OpenTelemetry.Trace;
 using MassTransit;
 using InventoryService.Application;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text;
-using System;
-using StackExchange.Redis;
-using RedLockNet.SERedis;
-using RedLockNet.SERedis.Configuration;
-using System.Collections.Generic;
-using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,16 +16,6 @@ builder.Services.AddHealthChecks();
 
 
 
-// OpenTelemetry Setup
-
-builder.Services.AddOpenTelemetry()
-    .WithTracing(tracerProviderBuilder =>
-    {
-        tracerProviderBuilder
-            .AddSource("InventoryService")
-            .AddAspNetCoreInstrumentation();
-    });
-
 // Redis setup
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -38,20 +23,27 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "Inventory_";
 });
 
-// RedLock setup for Distributed Locking
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
-// Use lazy connection so it doesn't block startup if Redis is down initially in docker-compose
-builder.Services.AddSingleton<RedLockNet.IDistributedLockFactory>(sp =>
-{
-    var multiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
-    var redLockMultiplexers = new List<RedLockMultiplexer> { new RedLockMultiplexer(multiplexer) };
-    return RedLockFactory.Create(redLockMultiplexers);
-});
-
-
 // RabbitMQ MassTransit setup
+// ============================================================================
+// EDU: IDEMPOTENT CONSUMER (MongoDB Outbox/Inbox)
+// ============================================================================
+// In distributed systems, Message Brokers guarantee "At-Least-Once" delivery.
+// This means our consumer might receive the same OrderCreatedEvent twice.
+// By configuring the MassTransit MongoDb Inbox, MassTransit automatically tracks
+// the MessageId. If a duplicate message arrives, it is safely ignored, preventing
+// double-deduction of inventory.
+// ============================================================================
 builder.Services.AddMassTransit(x =>
 {
+    x.AddMongoDbOutbox(o =>
+    {
+        o.DisableInboxCleanupService();
+        o.ClientFactory(provider => new MongoDB.Driver.MongoClient(builder.Configuration["MongoDb:ConnectionString"] ?? "mongodb://localhost:27017"));
+        o.DatabaseFactory(provider => provider.GetRequiredService<MongoDB.Driver.IMongoClient>().GetDatabase("inventorydb"));
+
+        o.UseBusOutbox();
+    });
+
     x.AddConsumer<OrderCreatedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
@@ -64,6 +56,8 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ReceiveEndpoint("order-created-queue", e =>
         {
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
+            e.UseMongoDbOutbox(context);
             e.ConfigureConsumer<OrderCreatedConsumer>(context);
         });
     });
@@ -74,18 +68,5 @@ var app = builder.Build();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapControllers();
-
-// Simple endpoint to test Redis cache
-app.MapGet("/api/inventory/cache-test", async (IDistributedCache cache) =>
-{
-    var cachedTime = await cache.GetStringAsync("lastAccessTime");
-    var currentTime = DateTime.UtcNow.ToString();
-
-    await cache.SetStringAsync("lastAccessTime", currentTime, new DistributedCacheEntryOptions {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-    });
-
-    return Results.Ok(new { PreviousAccess = cachedTime ?? "Never", CurrentAccess = currentTime });
-});
 
 app.Run();
