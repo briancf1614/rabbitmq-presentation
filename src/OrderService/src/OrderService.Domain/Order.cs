@@ -1,20 +1,21 @@
+// ============================================================================
+// EDU: DOMAIN-DRIVEN DESIGN (DDD) - AGGREGATE ROOT
+// ============================================================================
+// This class represents an Aggregate Root in DDD.
+// Key concepts demonstrated here:
+// 1. Rich Domain Model: Contains business logic (AddItem, RecalculateTotal) rather than just being data bags.
+// 2. Encapsulation: Properties have private setters. State can only be changed via methods.
+// 3. Validations: Constructors and methods enforce invariants (e.g., negative prices).
+// 4. Encapsulated Collections: The Items list is exposed as IReadOnlyCollection to prevent external modification.
+// ============================================================================
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace OrderService.Domain
 {
-    // ============================================================================
-    // EDU: DOMAIN-DRIVEN DESIGN (DDD) - AGGREGATE ROOT
-    // ============================================================================
-    // This class represents an Aggregate Root in DDD.
-    // Key concepts demonstrated here:
-    // 1. Rich Domain Model: Contains business logic (AddItem, RecalculateTotal) rather than just being data bags.
-    // 2. Encapsulation: Properties have private setters. State can only be changed via methods.
-    // 3. Validations: Constructors and methods enforce invariants (e.g., negative prices).
-    // 4. Encapsulated Collections: The Items list is exposed as IReadOnlyCollection to prevent external modification.
-    // ============================================================================
-    public class Order : Entity
+    public class Order
     {
         public Guid Id { get; private set; }
         public string CustomerName { get; private set; }
@@ -37,7 +38,6 @@ namespace OrderService.Domain
             CustomerName = customerName;
             Status = "Created";
             CreatedAt = DateTime.UtcNow;
-            AddDomainEvent(new OrderStartedDomainEvent(Id));
         }
 
         public void AddItem(string productName, decimal unitPrice, int quantity)
