@@ -1,61 +1,58 @@
-# 🚀 Enterprise Microservices Platform
+# 🐰 RabbitMQ .NET Demo: Architettura Asincrona e Scalabile
 
-Welcome to the Enterprise Microservices Platform! This project is a comprehensive, production-ready infrastructure demonstrating advanced software engineering patterns, architectures, and technologies. It was built to serve as a deep-learning resource and a blueprint for scalable, resilient systems.
+Questo progetto è una **Demo Didattica** creata per dimostrare i vantaggi di un'architettura a microservizi disaccoppiata basata su messaggi (Message Broker) rispetto a un'architettura monolitica sincrona.
 
-## 🎯 Project Goals
-The primary goal of this repository is to showcase a **"Super Professional Infrastructure"**, moving beyond simple CRUD apps to implement a robust, decoupled, and scalable ecosystem. It incorporates:
-- Microservices Architecture
-- Clean Architecture principles
-- CQRS (Command Query Responsibility Segregation)
-- Event-Driven Architecture (Pub/Sub)
-- API Gateways
-- Multiple client types (Web & Mobile)
-- Containerization and Orchestration
+Il caso d'uso reale simulato è la **Generazione di Immagini tramite AI (Google Gemini)**, un processo intrinsecamente lento e pesante.
 
-## 📁 Repository Structure
-```
-├── docs/                     # Architectural documentation (ARCHITECTURE.md)
-├── src/
-│   ├── ApiGateway/           # YARP-based Reverse Proxy entry point
-│   ├── OrderService/         # C# Microservice (Clean Arch, CQRS, PostgreSQL, EF Core)
-│   ├── InventoryService/     # C# Microservice (Clean Arch, MongoDB)
-│   ├── WebFrontend/          # Angular App (Standalone Components, SCSS)
-│   ├── MobileApp/            # Android Native App (Kotlin)
-│   └── Infrastructure/       # Docker Compose & Kubernetes manifests
-```
+## 🎯 Obiettivo della Demo
 
-## 🛠️ Technologies Used
-- **Backend**: C# 8.0/10.0, ASP.NET Core Web API
-- **Architecture Patterns**: Clean Architecture, Microservices, CQRS (MediatR)
-- **Messaging/Integration**: RabbitMQ, MassTransit
-- **Databases**: PostgreSQL (Relational), MongoDB (NoSQL)
-- **Gateway**: YARP (Yet Another Reverse Proxy)
-- **Frontend**: Angular
-- **Mobile**: Android (Kotlin)
-- **DevOps**: Docker, Docker Compose, Kubernetes (K8s)
+L'obiettivo è confrontare visivamente e tecnicamente due approcci:
 
-## 📖 Deep Dive
-To truly understand the design decisions, patterns, and how the services interact, please read the detailed architectural documentation:
-👉 [Read ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+1.  ❌ **Approccio Sincrono (Bloccante):** L'API chiama direttamente il servizio AI. L'utente aspetta, l'interfaccia si blocca, il server rischia il timeout.
+2.  ✅ **Approccio Asincrono (RabbitMQ):** L'API delega il lavoro a una coda. L'utente riceve risposta immediata ("Fire and Forget"), mentre i **Worker** lavorano in background.
 
-## 🚀 Getting Started
+## 🏗️ Architettura del Progetto
 
-### Prerequisites
-- Docker & Docker Compose
-- .NET 8 SDK (or latest)
-- Node.js & npm (for Angular)
+Il sistema è composto da tre parti distinte:
 
-### Running Locally with Docker
-The easiest way to spin up the entire infrastructure (Databases, RabbitMQ, and Microservices) is using Docker Compose:
+### 1. API Producer (`/api-producer`)
+* **Tecnologia:** .NET 8 Web API.
+* **Ruolo:** Riceve le richieste dall'utente.
+* **Endpoint A (Rabbit):** Invia un messaggio alla coda e restituisce subito `200 OK`.
+* **Endpoint B (Direct):** Esegue il lavoro pesante bloccando la chiamata HTTP (per confronto).
 
+### 2. Worker Service (`/worker-service`)
+* **Tecnologia:** .NET 8 Worker Service (Console App).
+* **Ruolo:** Consumatore (Consumer). Ascolta la coda `image_requests_queue`.
+* **Funzionamento:**
+    * Preleva un messaggio.
+    * Chiama le API di Google Gemini per generare l'immagine.
+    * Invia un **ACK** (Conferma) manuale solo a lavoro finito.
+    * Gestisce errori e crash con logiche di **Retry/NACK**.
+
+### 3. Frontend Client (`/frontend-angular`)
+* **Tecnologia:** Angular (Generato da IA).
+* **Nota:** Questo frontend serve **esclusivamente come trigger grafico** per la demo. Il codice non è oggetto di studio.
+
+---
+
+## ⚡ Caratteristiche Chiave Dimostrate
+
+* **Fire and Forget:** L'API risponde in millisecondi indipendentemente dal carico di lavoro.
+* **Scalabilità Orizzontale:** Possiamo avviare 1, 10 o 50 istanze del `Worker Service` per smaltire la coda più velocemente senza toccare l'API.
+* **Resilienza:** Se un Worker crasha mentre genera un'immagine, RabbitMQ (grazie al meccanismo di ACK manuale) rimette il messaggio in coda per un altro Worker. Nessun dato viene perso.
+* **Gestione dei Picchi:** Se arrivano 1000 richieste al secondo, il server non esplode. I messaggi si accumulano nella coda e vengono smaltiti a velocità costante.
+
+---
+
+## 🚀 Come Avviare il Progetto
+
+### Prerequisiti
+* [.NET 10 SDK](https://dotnet.microsoft.com/download)
+* [Docker](https://www.docker.com/) (per RabbitMQ)
+* Una API Key di Google Gemini (variabile d'ambiente: `GOOGLE_API_KEY`)
+
+### 1. Avvia RabbitMQ
+Esegui il container RabbitMQ con l'interfaccia di gestione:
 ```bash
-cd src/Infrastructure/docker
-docker-compose up -d
-```
-This will start:
-- RabbitMQ on port 15672 (Management UI)
-- PostgreSQL & MongoDB
-- OrderService, InventoryService
-- API Gateway on port 5000
-
-Enjoy studying this architecture!
+docker run -d --hostnamemy-rabbit --name some-rabbit -p 15672:15672 -p 5672:5672 rabbitmq:4-management
