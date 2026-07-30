@@ -1,4 +1,4 @@
-name: CI
+name: Enterprise Platform CI/CD
 
 on:
   push:
@@ -6,30 +6,47 @@ on:
   pull_request:
     branches: [ "main" ]
 
-  workflow_dispatch:
-
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
 
-      - name: Test
-        run: dotnet build api-producer/api-producer.slnx
+    - name: Restore Backend Dependencies
+      run: |
+        dotnet restore src/OrderService/OrderService.slnx
+        dotnet restore src/InventoryService/InventoryService.slnx
+        dotnet restore src/ApiGateway/src/ApiGateway/ApiGateway.csproj
+
+    - name: Build Backend
+      run: |
+        dotnet build --no-restore src/OrderService/OrderService.slnx
+        dotnet build --no-restore src/InventoryService/InventoryService.slnx
+        dotnet build --no-restore src/ApiGateway/src/ApiGateway/ApiGateway.csproj
+
+  build-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
         
-      - name: Test worker
-        run: dotnet build worker-consumer/worker-consumer.slnx
-        
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+    - name: Install Frontend Dependencies
+      run: npm install
+      working-directory: ./src/WebFrontend/AngularApp
 
-      - name: Build frontend
-        run: cd angular-client && npm install && npm run build
+    - name: Build Angular App
+      run: npm run build
+      working-directory: ./src/WebFrontend/AngularApp
