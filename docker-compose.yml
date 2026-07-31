@@ -1,0 +1,73 @@
+services:
+  # 🐰 1. RABBITMQ (Il Message Broker)
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # Porta per i servizi .NET
+      - "15672:15672" # Dashboard Web (User: guest / Pass: guest)
+    networks:
+      - rabbit-net
+
+  # 📨 2. API PRODUCER (.NET Web API)
+  api-producer:
+    build: ./api-producer
+    container_name: api-producer
+    restart: always
+    # Cloudflare parlerà con questo container sulla porta 8080 interna
+    # Mappiamo la 3000 solo per debug locale se serve
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RABBITMQ_HOST=rabbitmq
+      - GOOGLE_API_KEY=${GOOGLE_KEY}
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./generated-images:/app/generated-images:rw
+    networks:
+      - rabbit-net
+
+  # 👷 3. WORKER CONSUMER (.NET Worker Service)
+  worker-consumer:
+    build: ./worker-consumer
+    restart: always
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - GOOGLE_API_KEY=${GOOGLE_KEY}
+    volumes:
+      - ./generated-images:/app/generated-images:rw
+    depends_on:
+      - rabbitmq
+    networks:
+      - rabbit-net
+
+  # 🌐 4. ANGULAR CLIENT (Frontend)
+  angular-client:
+    build: ./angular-client
+    container_name: angular-client
+    restart: always
+    # Cloudflare parlerà con questo container sulla porta 80 interna
+    depends_on:
+      - api-producer
+    volumes:
+      # Mappiamo lo stesso volume dentro gli asset di Nginx
+      - ./generated-images:/usr/share/nginx/html/assets/generated:ro
+    networks:
+      - rabbit-net
+
+  # ☁️ 5. CLOUDFLARE TUNNEL (Zero Trust)
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: always
+    # 👇 INCOLLA QUI SOTTO IL TUO TOKEN DI CLOUDFLARE 👇
+    command: tunnel run --token ${CLOUDFLARE_TOKEN}
+    networks:
+      - rabbit-net
+
+networks:
+  rabbit-net:
+    driver: bridge
